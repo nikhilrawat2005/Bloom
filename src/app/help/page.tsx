@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { HelpCircle, ChevronDown, Mail, Phone, ArrowLeft, Sparkles } from "lucide-react";
+import { HelpCircle, ChevronDown, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 const containerVariants: Variants = {
@@ -19,12 +19,12 @@ const itemVariants: Variants = {
 
 const faqs = [
   {
-    q: "How do I create a Bloom account?",
-    a: "Click 'Get Started' or 'Sign Up' on the homepage. You can register using your email address. Once registered, complete your profile so Bloom can match you with relevant opportunities.",
+    q: "How do I create a NEXORA account?",
+    a: "Click 'Get Started' or 'Sign Up' on the homepage. You can register using your email address. Once registered, complete your profile so NEXORA can match you with relevant opportunities.",
   },
   {
-    q: "How does Bloom match opportunities to my profile?",
-    a: "Bloom uses the details you provide in your profile — education level, field of interest, location, income bracket, and skills — to surface the most relevant scholarships, fellowships, internships, and programs from our live database.",
+    q: "How does NEXORA match opportunities to my profile?",
+    a: "NEXORA uses the details you provide in your profile — education level, field of interest, location, income bracket, and skills — to surface the most relevant scholarships, fellowships, internships, and programs from our live database.",
   },
   {
     q: "How do I bookmark an opportunity?",
@@ -43,20 +43,20 @@ const faqs = [
     a: "On any opportunity detail page, click 'Set Reminder' in the Deadline Alert panel on the right sidebar. You must be logged in. The reminder will appear on your dashboard so you never miss an application window.",
   },
   {
-    q: "Can organizations post opportunities on Bloom?",
+    q: "Can organizations post opportunities on NEXORA?",
     a: "Yes! Organizations can register and submit opportunities through the Organization Portal. Submitted opportunities go through an approval process before being visible to users.",
   },
   {
-    q: "Is my data safe on Bloom?",
-    a: "Absolutely. Bloom uses Firebase Authentication and Firestore with strict security rules. Documents uploaded to the Wallet are stored in a private Cloudinary folder isolated per user. We never sell your data. See our Privacy Policy for full details.",
+    q: "Is my data safe on NEXORA?",
+    a: "Absolutely. NEXORA uses Firebase Authentication and Firestore with strict security rules. Documents uploaded to the Wallet are stored in a private Cloudinary folder isolated per user. We never sell your data. See our Privacy Policy for full details.",
   },
   {
-    q: "How do I contact Bloom support?",
-    a: "You can reach us via email at nikhil2005114@gmail.com or by phone/WhatsApp at +91 870 011 3731. We aim to respond within 24 hours.",
+    q: "How do I contact NEXORA support?",
+    a: "Our support team is available through the NEXORA Help Center and we aim to respond within 24 hours.",
   },
 ];
 
-function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
+function FAQItem({ q, a }: { q: string; a: string; index: number }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -128,7 +128,7 @@ export default function HelpCenterPage() {
               variants={itemVariants}
               className="mt-4 text-base text-foreground-muted max-w-xl mx-auto leading-relaxed"
             >
-              Browse answers to the most frequently asked questions about using the Bloom platform.
+              Browse answers to the most frequently asked questions about using the NEXORA platform.
             </motion.p>
           </motion.div>
         </section>
@@ -153,44 +153,6 @@ export default function HelpCenterPage() {
           </motion.div>
         </section>
 
-        {/* Still need help? */}
-        <section className="border-t border-border bg-surface-raised py-14 px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="max-w-2xl mx-auto text-center"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4 }}
-          >
-            <Sparkles className="w-8 h-8 text-primary mx-auto mb-3" />
-            <h2 className="text-xl font-extrabold text-foreground mb-2">Still Need Help?</h2>
-            <p className="text-sm text-foreground-muted mb-6">
-              Can&apos;t find what you&apos;re looking for? Our team is here for you.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <motion.a
-                href="mailto:nikhil2005114@gmail.com"
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 380, damping: 18 }}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-2xl shadow-md hover:bg-primary-hover transition-all"
-              >
-                <Mail className="w-4 h-4" />
-                Email Support
-              </motion.a>
-              <motion.a
-                href="tel:+918700113731"
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 380, damping: 18 }}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-surface border border-border text-foreground font-semibold text-sm rounded-2xl shadow-sm hover:border-primary/30 hover:text-primary transition-all"
-              >
-                <Phone className="w-4 h-4" />
-                +91 870 011 3731
-              </motion.a>
-            </div>
-          </motion.div>
-        </section>
       </main>
       <Footer />
     </>

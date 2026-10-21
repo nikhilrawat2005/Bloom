@@ -11,7 +11,7 @@
 
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Opportunity } from "@/lib/mockData";
+import { Opportunity, normalizeOpportunityDoc } from "@/lib/mockData";
 
 export async function getAllOpportunitiesOnce(): Promise<Opportunity[]> {
   try {
@@ -22,7 +22,7 @@ export async function getAllOpportunitiesOnce(): Promise<Opportunity[]> {
     const snap = await getDocs(q);
     const items: Opportunity[] = [];
     snap.forEach((d) => {
-      items.push({ id: d.id, ...d.data() } as unknown as Opportunity);
+      items.push(normalizeOpportunityDoc(d.id, d.data() as Record<string, unknown>));
     });
     return items;
   } catch (err) {

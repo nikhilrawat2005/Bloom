@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Opportunity } from "@/lib/mockData";
+import { Opportunity, normalizeOpportunityDoc } from "@/lib/mockData";
 
 /**
  * Loads real, approved opportunities from Firestore's "org_opportunities"
@@ -28,8 +28,24 @@ export function useOpportunities() {
       q,
       (snap) => {
         const items: Opportunity[] = [];
+        const now = Date.now();
         snap.forEach((d) => {
-          items.push({ id: d.id, ...d.data() } as unknown as Opportunity);
+          const data = d.data();
+          const deadline = data.deadline;
+          // Check if expired
+          if (deadline && typeof deadline === "string") {
+            const lower = deadline.toLowerCase();
+            const isEvergreen = lower.includes("rolling") || lower.includes("check official") || lower.includes("tbd") || lower.includes("open until");
+            if (!isEvergreen) {
+              const dt = new Date(deadline);
+              if (!isNaN(dt.getTime())) {
+                const endOfDay = new Date(dt);
+                endOfDay.setHours(23, 59, 59, 999);
+                if (endOfDay.getTime() < now) return; // Skip expired
+              }
+            }
+          }
+          items.push(normalizeOpportunityDoc(d.id, data));
         });
         setOpportunities(items);
         setLoading(false);

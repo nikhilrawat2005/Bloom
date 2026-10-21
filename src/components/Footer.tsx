@@ -1,52 +1,68 @@
 import Link from "next/link";
-import { Sparkles, Heart } from "lucide-react";
+
+const COLUMNS = [
+  {
+    heading: "Platform",
+    links: [
+      { name: "Explore", href: "/explore" },
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Saved", href: "/saved" },
+      { name: "AI Career Hub", href: "/ai-hub" },
+    ],
+  },
+  {
+    heading: "Resources",
+    links: [
+      { name: "Help", href: "/help" },
+      { name: "Privacy", href: "/privacy" },
+      { name: "Terms", href: "/terms" },
+    ],
+  },
+];
 
 export default function Footer() {
   return (
-    <footer className="bg-surface-footer text-foreground-muted border-t border-white/5">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Logo & Description */}
-          <div className="md:col-span-2 space-y-4">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
-              <span className="p-1.5 bg-primary text-white rounded-lg">
-                <Sparkles className="w-5 h-5" />
+    <footer className="bg-surface-footer border-t border-white/[0.06] text-white/70">
+      <div className="shell py-12">
+        <div className="grid gap-10 md:grid-cols-[1.4fr_0.7fr_0.7fr]">
+          <div>
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <span className="grid h-7 w-7 place-items-center rounded-[9px] bg-white font-display text-xs font-bold tracking-[0.12em] text-[#1A1625]">
+                N
               </span>
-              <span>Bloom</span>
+              <span className="font-display text-lg tracking-[-0.03em] text-white">NEXORA</span>
+              <span className="ml-1 border-l border-white/15 pl-3 text-2xs font-semibold tracking-[0.16em] text-white/50">
+                ATLAS
+              </span>
             </Link>
-            <p className="text-sm max-w-sm leading-relaxed">
-              Empowering women worldwide to access funded academic scholarship schemes, professional fellowships, hackathons, and STEM programs in one unified environment.
+            <p className="mt-4 max-w-[420px] text-sm leading-relaxed text-white/60 text-pretty">
+              Parchment calm, ink precision. A curated atlas of 400 opportunities — brass details, not
+              gradients. Built for signal, not noise.
+            </p>
+            <p className="mt-4 text-2xs font-medium tracking-[0.08em] text-white/40">
+              © 2026 NEXORA • Discover • Prepare • Grow
             </p>
           </div>
 
-          {/* Platform Links */}
-          <div>
-            <h4 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">Platform</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/explore" className="hover:text-white transition-colors">Explore Opps</Link></li>
-              <li><Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link></li>
-              <li><Link href="/saved" className="hover:text-white transition-colors">Saved Opps</Link></li>
-              <li><Link href="/ai-hub" className="hover:text-white transition-colors">AI Hub</Link></li>
-              <li><Link href="/profile" className="hover:text-white transition-colors">Profile Setup</Link></li>
-            </ul>
-          </div>
-
-          {/* Legal / Contact */}
-          <div>
-            <h4 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">Resources</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/help" className="hover:text-white transition-colors">Help Center</Link></li>
-              <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Use</Link></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-white/10 mt-12 pt-6 text-center text-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 Bloom Platform. All rights reserved.</p>
-          <p className="flex items-center gap-1">
-            Made with <Heart className="w-3.5 h-3.5 text-primary fill-primary" /> for women in technology
-          </p>
+          {COLUMNS.map((col) => (
+            <nav key={col.heading} aria-label={col.heading}>
+              <div className="text-2xs font-semibold tracking-[0.14em] text-white/90">
+                {col.heading.toUpperCase()}
+              </div>
+              <ul className="mt-3 space-y-2.5 text-sm text-white/60">
+                {col.links.map((l) => (
+                  <li key={l.href}>
+                    <Link
+                      href={l.href}
+                      className="transition-colors duration-fast hover:text-white"
+                    >
+                      {l.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
         </div>
       </div>
     </footer>

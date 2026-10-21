@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { Shield, ArrowLeft, Mail, Phone } from "lucide-react";
+import { Shield, ArrowLeft } from "lucide-react";
 
 const containerVariants: Variants = {
   hidden: {},
@@ -30,7 +30,7 @@ const sections = [
     title: "2. How We Use Your Information",
     content: `We use the information we collect to:
 
-• Provide, operate, and improve the Bloom platform.
+• Provide, operate, and improve the NEXORA platform.
 • Match and recommend relevant scholarships, fellowships, internships, and STEM programs to your profile.
 • Send deadline reminders and dashboard notifications you explicitly opt into.
 • Respond to your support requests and communicate updates.
@@ -51,13 +51,13 @@ While we take every reasonable precaution, no method of internet transmission is
   },
   {
     title: "4. Cookies & Analytics",
-    content: `Bloom uses minimal browser storage (localStorage) only to persist your theme preference (light/dark mode). We do not use third-party advertising cookies or tracking pixels.
+    content: `NEXORA uses minimal browser storage (localStorage) only to persist your theme preference (light/dark mode). We do not use third-party advertising cookies or tracking pixels.
 
 Anonymous usage analytics may be collected to understand aggregate platform usage and improve the user experience. This data cannot identify you personally.`,
   },
   {
     title: "5. Third-Party Services",
-    content: `Bloom integrates with the following third-party services to provide core functionality:
+    content: `NEXORA integrates with the following third-party services to provide core functionality:
 
 • **Google Firebase** — Authentication and database (Google Privacy Policy applies).
 • **Cloudinary** — Document/file storage (Cloudinary Privacy Policy applies).
@@ -71,14 +71,14 @@ When you follow external "Apply" links to official program sites, those websites
 
 • **Access** the personal data we hold about you.
 • **Correct** inaccurate profile information at any time via the Profile Settings page.
-• **Delete** your account and all associated data by contacting us at nikhil2005114@gmail.com.
+• **Delete** your account and all associated data from your account settings.
 • **Withdraw consent** to any optional data processing.
 
 To exercise any of these rights, contact us using the details below.`,
   },
   {
     title: "7. Children's Privacy",
-    content: `Bloom is intended for users who are at least 13 years of age. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us with their information, please contact us immediately so we can delete it.`,
+    content: `NEXORA is intended for users who are at least 13 years of age. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us with their information, please contact us immediately so we can delete it.`,
   },
   {
     title: "8. Changes to This Policy",
@@ -86,10 +86,7 @@ To exercise any of these rights, contact us using the details below.`,
   },
   {
     title: "9. Contact Us",
-    content: `If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact:
-
-• **Email:** nikhil2005114@gmail.com
-• **Phone / WhatsApp:** +91 870 011 3731`,
+    content: `If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please reach out to us through the NEXORA Help Center.`,
   },
 ];
 
@@ -131,13 +128,13 @@ export default function PrivacyPolicyPage() {
               variants={itemVariants}
               className="mt-4 text-sm text-foreground-muted leading-relaxed"
             >
-              Last updated: July 10, 2026 &nbsp;·&nbsp; Bloom Platform
+              Last updated: July 10, 2026 &nbsp;·&nbsp; NEXORA Platform
             </motion.p>
             <motion.p
               variants={itemVariants}
               className="mt-3 text-base text-foreground-muted max-w-2xl leading-relaxed"
             >
-              At Bloom, we are committed to protecting your privacy and handling your personal information with transparency and care. This policy explains what data we collect, how we use it, and how we keep it safe.
+              At NEXORA, we are committed to protecting your privacy and handling your personal information with transparency and care. This policy explains what data we collect, how we use it, and how we keep it safe.
             </motion.p>
           </motion.div>
         </section>
@@ -168,35 +165,6 @@ export default function PrivacyPolicyPage() {
                 </div>
               </motion.div>
             ))}
-          </motion.div>
-        </section>
-
-        {/* Contact strip */}
-        <section className="border-t border-border bg-surface-raised py-12 px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="max-w-2xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-5"
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4 }}
-          >
-            <p className="text-sm text-foreground-muted text-center sm:text-left">
-              Questions about your data? Our team is here to help.
-            </p>
-            <div className="flex gap-3 flex-wrap justify-center">
-              <a
-                href="mailto:nikhil2005114@gmail.com"
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary text-primary-foreground font-semibold text-xs rounded-xl hover:bg-primary-hover transition-all"
-              >
-                <Mail className="w-3.5 h-3.5" /> Email Us
-              </a>
-              <a
-                href="tel:+918700113731"
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-surface border border-border text-foreground font-semibold text-xs rounded-xl hover:border-primary/40 hover:text-primary transition-all"
-              >
-                <Phone className="w-3.5 h-3.5" /> Call Us
-              </a>
-            </div>
           </motion.div>
         </section>
       </main>

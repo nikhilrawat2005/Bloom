@@ -3,266 +3,205 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { LogOut, Menu, X, Sparkles } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle";
 
+const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as const;
+
+const LINKS = [
+  { name: "Home", href: "/" },
+  { name: "Explore", href: "/explore" },
+  { name: "Saved", href: "/saved" },
+  { name: "Dashboard", href: "/dashboard" },
+  { name: "AI Hub", href: "/ai-hub" },
+  { name: "Profile", href: "/profile" },
+];
+
 export default function Navbar() {
   const pathname = usePathname();
   const { currentUser, logout } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  const links = [
-    { name: "Explore", href: "/explore" },
-    { name: "Saved", href: "/saved" },
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "AI Hub", href: "/ai-hub" },
-    { name: "Profile", href: "/profile" },
-  ];
-
-  // Shrink + deepen the navbar once the page scrolls a little
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => setScrolled(window.scrollY > 6);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close the mobile menu automatically on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
+  useEffect(() => setOpen(false), [pathname]);
+
+  const initials = (currentUser?.displayName || currentUser?.email || "U")[0].toUpperCase();
+  const displayName = currentUser?.displayName || currentUser?.email;
 
   return (
     <motion.nav
-      initial={{ y: -24, opacity: 0 }}
-      animate={{
-        y: 0,
-        opacity: 1,
-        height: scrolled ? 60 : 68,
-        boxShadow: scrolled
-          ? "0 8px 24px -12px rgba(178, 58, 92, 0.18)"
-          : "0 0px 0px rgba(0,0,0,0)",
-      }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-border flex items-center"
+      initial={{ y: -12, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+      className={`sticky top-0 z-50 border-b border-border backdrop-blur-[14px] transition-[background-color,box-shadow] duration-slow ${
+        scrolled ? "bg-surface/92 shadow-e2" : "bg-surface/72"
+      }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="flex justify-between items-center">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground group">
-              <motion.span
-                whileHover={{ rotate: 12, scale: 1.08 }}
-                whileTap={{ scale: 0.92, rotate: -8 }}
-                transition={{ type: "spring", stiffness: 400, damping: 12 }}
-                className="p-1.5 bg-primary text-white rounded-lg shadow-sm inline-flex"
-              >
-                <Sparkles className="w-5 h-5" />
-              </motion.span>
-              <span>Bloom</span>
-            </Link>
-          </div>
+      <div className="shell">
+        <div className="flex h-16 items-center justify-between gap-6">
+          <Link href="/" className="group flex shrink-0 items-center gap-2.5">
+            <span className="grid h-[30px] w-[30px] place-items-center rounded-[9px] bg-foreground font-display text-xs font-bold tracking-[0.12em] text-background transition-transform duration-slow group-hover:rotate-6">
+              N
+            </span>
+            <span className="font-display text-lg tracking-[-0.03em]">NEXORA</span>
+          </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden sm:flex sm:items-center sm:gap-6">
-            {links.map((link) => {
-              const isActive = pathname === link.href;
+          <div className="hidden items-center gap-1 lg:flex">
+            {LINKS.map((l) => {
+              const active = pathname === l.href;
               return (
                 <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`relative text-sm font-medium py-1 transition-colors ${
-                    isActive
-                      ? "text-primary font-semibold"
-                      : "text-foreground-muted hover:text-foreground"
+                  key={l.href}
+                  href={l.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`relative rounded-[10px] px-3.5 py-2 text-sm font-medium tracking-[-0.01em] transition-colors duration-fast ${
+                    active
+                      ? "bg-surface-raised text-foreground"
+                      : "text-foreground-muted hover:bg-surface-raised/70 hover:text-foreground"
                   }`}
                 >
-                  {link.name}
-                  {isActive && (
+                  {l.name}
+                  {active && (
                     <motion.span
-                      layoutId="navbar-active-underline"
-                      className="absolute left-0 right-0 -bottom-1 h-[2px] bg-primary rounded-full"
-                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                      layoutId="ink-underline"
+                      className="absolute -bottom-px left-3 right-3 h-[1.5px] rounded-full bg-foreground"
+                      transition={{ type: "spring", stiffness: 420, damping: 30 }}
                     />
                   )}
                 </Link>
               );
             })}
+          </div>
 
-            {/* Theme Toggle (compact, icon-only) */}
+          <div className="hidden items-center gap-2.5 lg:flex">
             <ThemeToggle compact />
-
             {currentUser ? (
-              <div className="flex items-center gap-3 ml-2 border-l border-border pl-4">
-                <div className="flex items-center gap-2 text-sm text-foreground font-medium">
-                  <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                    {(currentUser.displayName || currentUser.email || "U").charAt(0).toUpperCase()}
-                  </div>
-                  <span className="hidden md:inline max-w-[120px] truncate">
-                    {currentUser.displayName || currentUser.email}
-                  </span>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => logout()}
-                  className="p-1.5 text-foreground-muted hover:text-danger rounded-lg hover:bg-danger-surface transition-colors"
-                  title="Sign Out"
+              <div className="ml-1 flex items-center gap-3 border-l border-border pl-3">
+                <span
+                  aria-hidden
+                  className="grid h-7 w-7 place-items-center rounded-full bg-foreground text-xs font-semibold text-background"
                 >
-                  <LogOut className="w-4 h-4" />
-                </motion.button>
+                  {initials}
+                </span>
+                <span className="hidden max-w-[130px] truncate text-sm font-medium tracking-[-0.01em] xl:inline">
+                  {displayName}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="grid h-8 w-8 place-items-center rounded-[10px] border border-border text-foreground-muted transition-colors duration-fast hover:border-foreground-subtle hover:text-foreground"
+                  title="Sign out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="sr-only">Sign out</span>
+                </button>
               </div>
             ) : (
-              <div className="flex items-center gap-3 ml-2">
-                <Link
-                  href="/auth/login"
-                  className="text-sm font-medium text-foreground-muted hover:text-foreground px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  Sign In
+              <>
+                <Link href="/auth/login" className="btn btn-ghost btn-sm">
+                  Sign in
                 </Link>
-                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
-                  <Link
-                    href="/auth/signup"
-                    className="text-sm font-semibold bg-primary text-white hover:bg-primary-hover px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-all block"
-                  >
-                    Join Bloom
-                  </Link>
-                </motion.div>
-              </div>
+                <Link href="/auth/signup" className="btn btn-primary btn-sm">
+                  Join NEXORA
+                </Link>
+              </>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex items-center gap-2 sm:hidden">
+          <div className="flex items-center gap-1.5 lg:hidden">
             <ThemeToggle compact />
-            <motion.button
-              whileTap={{ scale: 0.88 }}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-foreground-muted hover:text-foreground rounded-lg hover:bg-surface-raised transition-colors relative w-9 h-9 flex items-center justify-center"
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              aria-label={open ? "Close menu" : "Open menu"}
+              className="grid h-9 w-9 place-items-center rounded-[10px] border border-border bg-surface text-foreground"
             >
               <AnimatePresence mode="wait" initial={false}>
-                {mobileMenuOpen ? (
+                {open ? (
                   <motion.span
-                    key="close"
+                    key="x"
                     initial={{ rotate: -90, opacity: 0 }}
                     animate={{ rotate: 0, opacity: 1 }}
                     exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="absolute inset-0 flex items-center justify-center"
+                    transition={{ duration: 0.16 }}
                   >
-                    <X className="w-6 h-6" />
+                    <X className="w-4 h-4" />
                   </motion.span>
                 ) : (
                   <motion.span
-                    key="menu"
+                    key="m"
                     initial={{ rotate: 90, opacity: 0 }}
                     animate={{ rotate: 0, opacity: 1 }}
                     exit={{ rotate: -90, opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="absolute inset-0 flex items-center justify-center"
+                    transition={{ duration: 0.16 }}
                   >
-                    <Menu className="w-6 h-6" />
+                    <Menu className="w-4 h-4" />
                   </motion.span>
                 )}
               </AnimatePresence>
-            </motion.button>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
-        {mobileMenuOpen && (
+        {open && (
           <motion.div
-            key="mobile-menu"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.28, ease: "easeInOut" }}
-            className="sm:hidden absolute top-full left-0 right-0 bg-surface border-b border-border overflow-hidden"
+            transition={{ duration: 0.26, ease: EASE_OUT_EXPO }}
+            className="overflow-hidden border-t border-border bg-surface lg:hidden"
           >
-            <motion.div
-              initial="hidden"
-              animate="show"
-              variants={{
-                hidden: {},
-                show: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } },
-              }}
-              className="px-4 pt-2 pb-4 space-y-1"
-            >
-              {links.map((link) => {
-                const isActive = pathname === link.href;
+            <div className="space-y-1 px-4 py-4">
+              {LINKS.map((l) => {
+                const active = pathname === l.href;
                 return (
-                  <motion.div
-                    key={link.href}
-                    variants={{
-                      hidden: { opacity: 0, x: -12 },
-                      show: { opacity: 1, x: 0 },
-                    }}
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    aria-current={active ? "page" : undefined}
+                    className={`block rounded-[12px] px-3 py-2.5 text-sm font-medium transition-colors duration-fast ${
+                      active
+                        ? "bg-foreground text-background"
+                        : "bg-surface-raised/60 text-foreground-muted hover:text-foreground"
+                    }`}
                   >
-                    <Link
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`block px-3 py-2 rounded-lg text-base font-medium transition-colors ${
-                        isActive
-                          ? "bg-primary/8 text-primary font-semibold"
-                          : "text-foreground-muted hover:bg-surface-raised hover:text-foreground"
-                      }`}
-                    >
-                      {link.name}
-                    </Link>
-                  </motion.div>
+                    {l.name}
+                  </Link>
                 );
               })}
-
-              {currentUser ? (
-                <motion.div
-                  variants={{ hidden: { opacity: 0, x: -12 }, show: { opacity: 1, x: 0 } }}
-                  className="border-t border-border pt-3 mt-3 px-3"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                      {(currentUser.displayName || currentUser.email || "U").charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-foreground text-sm font-medium truncate">
-                      {currentUser.displayName || currentUser.email}
-                    </span>
-                  </div>
+              <div className="mt-3 flex gap-2 border-t border-border pt-3">
+                {currentUser ? (
                   <button
-                    onClick={() => {
-                      logout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="flex w-full items-center gap-2 text-danger text-sm font-semibold py-2"
+                    type="button"
+                    onClick={() => logout()}
+                    className="btn btn-secondary btn-md flex-1 justify-center"
                   >
-                    <LogOut className="w-4 h-4" /> Sign Out
+                    <LogOut className="w-4 h-4" /> Sign out
                   </button>
-                </motion.div>
-              ) : (
-                <motion.div
-                  variants={{ hidden: { opacity: 0, x: -12 }, show: { opacity: 1, x: 0 } }}
-                  className="border-t border-border pt-3 mt-3 flex flex-col gap-2"
-                >
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-center text-sm font-semibold text-foreground-muted py-2 rounded-lg border border-border hover:border-primary hover:text-primary transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/auth/signup"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-center text-sm font-semibold bg-primary text-white py-2.5 rounded-full hover:bg-primary-hover transition-colors"
-                  >
-                    Join Bloom
-                  </Link>
-                </motion.div>
-              )}
-            </motion.div>
+                ) : (
+                  <>
+                    <Link href="/auth/login" className="btn btn-secondary btn-md flex-1 justify-center">
+                      Sign in
+                    </Link>
+                    <Link href="/auth/signup" className="btn btn-primary btn-md flex-1 justify-center">
+                      Join
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

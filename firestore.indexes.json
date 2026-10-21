@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "resume_analyses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "org_opportunities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "postedByUid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

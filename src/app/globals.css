@@ -1,110 +1,105 @@
 @import "tailwindcss";
-
-/* Dark mode variant: toggled via .dark class on <html> */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ============================================================
-   LIGHT THEME (default)
-   ============================================================ */
+/* ===========================================================================
+   NEXORA DESIGN SYSTEM
+   Direction: quiet editorial. A warm ink-and-parchment base, brass as the
+   single accent, and restraint everywhere else — fewer borders, fewer colours,
+   more air. Every value below is a scale step, not a one-off, so pages stop
+   inventing their own numbers (that arbitrariness is what made the UI read
+   as generic). Motifs elsewhere in this file reference these steps only.
+   =========================================================================== */
+
 :root {
-  /* Backgrounds */
-  --background: #fbf9f6;        /* Warm ivory — confident, not candy-pink */
-  --surface: #ffffff;           /* Cards, panels */
-  --surface-raised: #f7f1ee;    /* Modals, dropdowns */
-  --surface-footer: #231a2e;    /* Footer always stays dark */
+  /* --- Surfaces: four planes, warm off-white through to ink --- */
+  --background: #FAF8F5;
+  --surface: #FFFFFF;
+  --surface-raised: #F4F1EC;
+  --surface-sunken: #F1EDE7;
+  --surface-ink: #1B1815;
+  --surface-footer: #15120F;
 
-  /* Text */
-  --foreground: #231a2e;        /* Deep plum-ink — primary text */
-  --foreground-muted: #5c5468;  /* Muted plum-grey */
+  /* --- Ink: three tones. Foreground is warm near-black, never pure #000 --- */
+  --foreground: #1B1815;
+  --foreground-muted: #6E6961;
+  --foreground-subtle: #9A948A;
 
-  /* Borders */
-  --border: #e8e1dd;            /* Warm neutral border */
-  --border-strong: #d8cdc7;     /* Stronger border variant */
+  /* --- Hairlines: deliberately quiet. Structure comes from spacing, not borders --- */
+  --border: #E8E4DD;
+  --border-strong: #D6D0C7;
 
-  /* Brand / Accent — deep berry rose (confident, not soft/candy) */
-  --primary: #b23a5c;
-  --primary-hover: #8e2c48;
-  --primary-foreground: #ffffff;
+  /* --- Brass: the one accent. Used for emphasis, never for large fills --- */
+  --primary: #1B1815;
+  --primary-hover: #332D27;
+  --primary-foreground: #FAF8F5;
+  --secondary: #8A7340;
+  --secondary-hover: #6E5B31;
+  --secondary-foreground: #FFFFFF;
+  --accent-gold: #8A7340;
+  --accent-gold-surface: #F6F0E2;
 
-  /* Secondary — ink navy (credibility / career signal) */
-  --secondary: #2c3e66;
-  --secondary-hover: #1e2c4a;
-  --secondary-foreground: #ffffff;
+  /* --- Status: desaturated to sit inside a warm palette, not shout --- */
+  --danger: #A13A34;
+  --danger-surface: #FBEDEC;
+  --success: #3C7355;
+  --success-surface: #EAF3EE;
+  --warning: #8A7340;
+  --warning-surface: #F6F0E2;
+  --info: #3F6480;
+  --info-surface: #ECF1F5;
 
-  /* Accent gold — achievement / success highlights (stars, badges) */
-  --accent-gold: #c99a3e;
-  --accent-gold-surface: #faf1dd;
-
-  /* Semantic */
-  --accent-glow: rgba(178, 58, 92, 0.12);
-  --danger: #c1392b;
-  --danger-surface: #fdf0ee;
-  --success: #2e7d5b;
-  --success-surface: #eef8f3;
-  --warning: #b45309;
-  --warning-surface: #fffbeb;
+  --focus-ring: color-mix(in srgb, var(--secondary) 62%, transparent);
+  --grain-opacity: 0.3;
 }
 
-/* ============================================================
-   DARK THEME — "Neon Rose on Black"
-   Near-black canvas + hot pink/crimson glow accents
-   NO grey as the mood color.
-   ============================================================ */
 .dark {
-  /* Backgrounds */
-  --background: #12101a;        /* Deep ink-violet black */
-  --surface: #1c1826;           /* Cards */
-  --surface-raised: #241f30;    /* Modals, dropdowns */
-  --surface-footer: #0f0b14;    /* Footer — deepest black */
+  --background: #100E0C;
+  --surface: #191614;
+  --surface-raised: #211E1B;
+  --surface-sunken: #151210;
+  --surface-ink: #F4F1EC;
+  --surface-footer: #0A0908;
 
-  /* Text */
-  --foreground: #f3ede9;        /* Warm off-white, not stark white */
-  --foreground-muted: #a99fb0;  /* Muted rose-grey — checked for AA contrast */
+  --foreground: #F4F1EC;
+  --foreground-muted: #A29B91;
+  --foreground-subtle: #7A736A;
 
-  /* Borders — rose-tinted, not grey */
-  --border: rgba(233, 138, 166, 0.14);
-  --border-strong: rgba(233, 138, 166, 0.26);
+  --border: rgba(244, 241, 236, 0.09);
+  --border-strong: rgba(244, 241, 236, 0.17);
 
-  /* Brand / Accent — rich rose, less neon than before */
-  --primary: #e85d82;
-  --primary-hover: #f17c9c;
-  /* Dark ink instead of white: white-on-rose only hits 3.32:1 (fails WCAG AA 4.5:1).
-     Dark ink on this rose hits 5.67:1. */
-  --primary-foreground: #12101a;
+  --primary: #F4F1EC;
+  --primary-hover: #FFFFFF;
+  --primary-foreground: #14110E;
+  --secondary: #C4A868;
+  --secondary-hover: #D8BF86;
+  --secondary-foreground: #14110E;
+  --accent-gold: #C4A868;
+  --accent-gold-surface: rgba(196, 168, 104, 0.12);
 
-  /* Secondary — soft periwinkle blue (pairs with rose, premium not neon) */
-  --secondary: #6c8ae4;
-  --secondary-hover: #8aa2ec;
-  --secondary-foreground: #12101a;
+  --danger: #E88C84;
+  --danger-surface: rgba(161, 58, 52, 0.15);
+  --success: #6FBF94;
+  --success-surface: rgba(60, 115, 85, 0.16);
+  --warning: #C4A868;
+  --warning-surface: rgba(196, 168, 104, 0.13);
+  --info: #7FAAC9;
+  --info-surface: rgba(63, 100, 128, 0.16);
 
-  /* Accent gold — achievement / success highlights */
-  --accent-gold: #e0b054;
-  --accent-gold-surface: rgba(224, 176, 84, 0.12);
-
-  /* Semantic */
-  --accent-glow: rgba(232, 93, 130, 0.16);
-  /* Darkened from #e8615f: white-on-red badges need 4.5:1, original hit 3.33:1 */
-  --danger: #d43e3c;
-  --danger-surface: rgba(232, 97, 95, 0.1);
-  --success: #4fbe8b;
-  --success-surface: rgba(79, 190, 139, 0.1);
-  --warning: #f2b84b;
-  --warning-surface: rgba(242, 184, 75, 0.1);
+  --focus-ring: color-mix(in srgb, var(--secondary) 72%, transparent);
+  --grain-opacity: 0.16;
 }
 
-/* ============================================================
-   TAILWIND V4 TOKEN MAP
-   Maps CSS variables → Tailwind utility classes
-   e.g. bg-background, text-foreground, border-border, etc.
-   ============================================================ */
+/* ---------------------------------------------------------------- tokens -- */
 @theme inline {
-  /* Semantic color tokens */
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
   --color-surface-footer: var(--surface-footer);
+  --color-surface-ink: var(--surface-ink);
   --color-foreground: var(--foreground);
   --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-primary: var(--primary);
@@ -121,123 +116,519 @@
   --color-success-surface: var(--success-surface);
   --color-warning: var(--warning);
   --color-warning-surface: var(--warning-surface);
+  --color-info: var(--info);
+  --color-info-surface: var(--info-surface);
 
-  /* Font */
-  --font-sans: var(--font-sans);
+  /* ── shadcn-compatible aliases ──────────────────────────────────────────
+     Our ui/ components (Button, Card, Chip, Skeleton, Field, etc.) use the
+     shadcn token vocabulary. Map each alias to the nearest Nexora equivalent
+     so Tailwind classes like bg-muted, text-destructive, bg-card resolve. */
+
+  /* card → surface (our cards sit on the surface plane) */
+  --color-card: var(--surface);
+  --color-card-foreground: var(--foreground);
+
+  /* muted → surface-raised / foreground-muted */
+  --color-muted: var(--surface-raised);
+  --color-muted-foreground: var(--foreground-muted);
+
+  /* accent → surface-raised (hover accent, same warm lift as raised) */
+  --color-accent: var(--surface-raised);
+  --color-accent-foreground: var(--foreground);
+
+  /* destructive → danger */
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: var(--primary-foreground);
+
+  /* popover → surface */
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--foreground);
+
+  /* Type scale — 11 steps, tight tracking, 1.55 body leading. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.35;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.5;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.25;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 1.15;
+  --text-4xl: 2.375rem;
+  --text-4xl--line-height: 1.08;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1.02;
+  --text-6xl: 3.75rem;
+  --text-6xl--line-height: 0.98;
+
+  /* Two fluid display sizes above the fixed scale. They exist so hero and
+     section openers size themselves continuously instead of snapping at three
+     breakpoints — the snapping was the tell that type was picked per screen
+     rather than per role. */
+  --text-display: clamp(2.5rem, 1.32rem + 4.3vw, 4.125rem);
+  --text-display--line-height: 0.92;
+  --text-display-sm: clamp(1.75rem, 1.24rem + 1.9vw, 2.125rem);
+  --text-display-sm--line-height: 1.02;
+
+  /* Radius — 6 steps. Cards sit at --radius-lg, never at a magic 24px. */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
+
+  /* Elevation — 4 steps of layered ink shadow, plus a focus ring. */
+  --shadow-e1: 0 1px 2px rgba(27, 24, 21, 0.04);
+  --shadow-e2: 0 1px 2px rgba(27, 24, 21, 0.04), 0 8px 24px -8px rgba(27, 24, 21, 0.1);
+  --shadow-e3: 0 2px 4px rgba(27, 24, 21, 0.04), 0 16px 40px -12px rgba(27, 24, 21, 0.14);
+  --shadow-e4: 0 4px 8px rgba(27, 24, 21, 0.05), 0 32px 64px -20px rgba(27, 24, 21, 0.2);
+
+  /* Motion — 5 durations, 3 easings. Every transition in the app draws
+     from these so timing feels like one hand made it. */
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-instant: 90ms;
+  --duration-fast: 150ms;
+  --duration-base: 220ms;
+  --duration-slow: 320ms;
+  --duration-slower: 480ms;
+
+  /* Fonts. `--font-display` is remapped in the font-face setup below so the
+     token and the next/font variable cannot collide into a cycle. */
+  --font-sans: var(--font-workhorse), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --spacing-section: 5.5rem;
+  --spacing-gutter: 1.5rem;
 }
 
-/* ============================================================
-   BASE STYLES
-   ============================================================ */
+/* ------------------------------------------------------------------ base -- */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), sans-serif;
-  overflow-x: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* ============================================================
-   GLASS PANEL — Theme-aware
-   ============================================================ */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.dark .glass-panel {
-  background: rgba(21, 16, 26, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 92, 134, 0.12);
-}
-
-/* ============================================================
-   SCROLLBAR — Theme-aware
-   ============================================================ */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
   background: var(--background);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
-}
-
-/* ============================================================
-   DARK MODE GLOW EFFECTS
-   ============================================================ */
-
-/* Card hover glow — subtle rose tint in dark mode */
-.dark .card-hover:hover {
-  box-shadow:
-    0 0 0 1px rgba(232, 93, 130, 0.14),
-    0 8px 24px rgba(232, 93, 130, 0.1);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+  transition: background-color var(--duration-slow) var(--ease-out-expo),
+    color var(--duration-slow) var(--ease-out-expo);
 }
 
-/* Button glow — used on primary CTAs in dark mode */
-.dark .btn-glow {
-  box-shadow: 0 0 12px rgba(232, 93, 130, 0.22);
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.028em;
+  line-height: 1.04;
+  text-wrap: balance;
 }
-.dark .btn-glow:hover {
-  box-shadow: 0 0 18px rgba(232, 93, 130, 0.32);
-}
+h1 { font-weight: 700; letter-spacing: -0.035em; }
+p { line-height: 1.6; letter-spacing: -0.011em; text-wrap: pretty; }
 
-/* Hero radial glow — dark mode only, softer + adds secondary hint */
-.dark .hero-glow::before {
-  content: '';
-  position: absolute;
+/* The one weight ladder. Four steps, nothing else — `font-black` on a card
+   title next to `font-medium` on a caption is what makes a UI feel unstyled. */
+@utility w-regular { font-weight: 400; }
+@utility w-medium { font-weight: 500; }
+@utility w-semibold { font-weight: 600; }
+@utility w-bold { font-weight: 700; }
+
+/* The duration ladder needs explicit utilities: `--duration-*` in `@theme` is
+   not a namespace Tailwind v4 generates from, so `duration-base` and friends
+   were silently resolving to nothing and every transition fell back to the
+   150ms default. Declaring them keeps `--duration-*` as the single source. */
+@utility duration-instant { transition-duration: var(--duration-instant); }
+@utility duration-fast { transition-duration: var(--duration-fast); }
+@utility duration-base { transition-duration: var(--duration-base); }
+@utility duration-slow { transition-duration: var(--duration-slow); }
+@utility duration-slower { transition-duration: var(--duration-slower); }
+
+::selection {
+  background: color-mix(in srgb, var(--secondary) 24%, transparent);
+  color: var(--foreground);
+}
+.dark ::selection { background: color-mix(in srgb, var(--secondary) 30%, transparent); }
+
+/* Fine paper grain. Modern restraint: barely there, but it stops the flat
+   off-white from reading as an unstyled canvas. */
+body::before {
+  content: "";
+  position: fixed;
   inset: 0;
-  background: radial-gradient(
-    ellipse 80% 50% at 50% -10%,
-    rgba(232, 93, 130, 0.08) 0%,
-    rgba(108, 138, 228, 0.04) 45%,
-    transparent 70%
-  );
+  z-index: 0;
   pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+.dark body::before { mix-blend-mode: soft-light; }
+
+/* --------------------------------------------------------------- surfaces -- */
+/* Everything from here to the end of the skeleton block is a *class primitive*,
+   not an element style. That distinction is load-bearing, so it is enforced with
+   an explicit `@layer components`.
+
+   Unlayered CSS outranks every layered rule regardless of source order, and
+   Tailwind emits its utilities into `@layer utilities`. A bare `.card { … }`
+   therefore beat `border-danger/40`, `bg-transparent`, `border-0` or
+   `rounded-full` on the same element — every `<Card className="…">` override in
+   the app silently did nothing. Inside `@layer components` the primitives sit
+   below utilities, so a `className` passed by a component actually wins, which
+   is the documented contract the primitives are written against.
+
+   Element-level rules further down (`:focus-visible`, the scrollbar `*` rule,
+   `@keyframes`, the reduced-motion block) stay unlayered on purpose: they are
+   not overridable by utilities by design. */
+@layer components {
+
+/* `.card` is the single card primitive. Interactive variants opt in via
+   `data-interactive`, which keeps the resting state calm and the hover state
+   obvious without every call site re-declaring a transition. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-e1);
+  transition: border-color var(--duration-base) var(--ease-out-expo),
+    box-shadow var(--duration-base) var(--ease-out-expo),
+    transform var(--duration-base) var(--ease-out-expo),
+    background-color var(--duration-base) var(--ease-out-expo);
+}
+.card[data-interactive="true"] { cursor: pointer; }
+.card[data-interactive="true"]:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-e3);
+  transform: translateY(-2px);
+}
+.card[data-interactive="true"]:active { transform: translateY(0); }
+.card-flat { box-shadow: none; }
+.card-raised { background: var(--surface-raised); }
+.card-inset { background: var(--surface-sunken); box-shadow: none; }
+.dark .card { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03); }
+.dark .card[data-interactive="true"]:hover {
+  box-shadow: var(--shadow-e3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-/* Form inputs — dark mode focus ring */
-.dark input:focus,
-.dark select:focus,
-.dark textarea:focus {
+/* Back-compat aliases. These are written out in full rather than using
+   `composes:`, which is a CSS-Modules feature and is meaningless in a global
+   stylesheet — it emitted the declaration literally and inherited nothing.
+   Delete once no call site references the old name. */
+.card-premium {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-e1);
+  transition: border-color var(--duration-base) var(--ease-out-expo),
+    box-shadow var(--duration-base) var(--ease-out-expo),
+    transform var(--duration-base) var(--ease-out-expo);
+}
+.card-premium:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-e3);
+  transform: translateY(-2px);
+}
+.dark .card-premium { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03); }
+
+/* --------------------------------------------------------------- controls -- */
+/* Buttons animate only transform / background / border / color. Never `all`:
+   `transition-all` makes layout properties animatable and reads as unpolished. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  transition: background-color var(--duration-fast) var(--ease-out-expo),
+    border-color var(--duration-fast) var(--ease-out-expo),
+    color var(--duration-fast) var(--ease-out-expo),
+    box-shadow var(--duration-fast) var(--ease-out-expo),
+    transform var(--duration-fast) var(--ease-out-expo);
+}
+.btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+
+.btn-md { padding: 0.625rem 1.125rem; font-size: var(--text-sm); }
+.btn-lg { padding: 0.85rem 1.6rem; font-size: var(--text-base); border-radius: var(--radius-lg); }
+.btn-sm { padding: 0.375rem 0.75rem; font-size: var(--text-xs); border-radius: var(--radius-sm); }
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--shadow-e1);
+}
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-e2); }
+.btn-primary:active { transform: scale(0.985); }
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--foreground);
+  border-color: var(--border-strong);
+}
+.btn-secondary:hover { background: var(--surface-raised); border-color: var(--foreground); }
+.btn-secondary:active { transform: scale(0.985); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--foreground);
+}
+.btn-ghost:hover { background: var(--surface-raised); }
+
+.btn-danger {
+  background: var(--danger-surface);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 26%, transparent);
+}
+.btn-danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+/* Historic aliases, written out in full (see note on .card-premium). */
+.btn-ink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-e1);
+  transition: background-color var(--duration-fast) var(--ease-out-expo),
+    box-shadow var(--duration-fast) var(--ease-out-expo),
+    transform var(--duration-fast) var(--ease-out-expo);
+}
+.btn-ink:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-e2); }
+.btn-ink:active { transform: scale(0.985); }
+.btn-ink:disabled { opacity: 0.5; pointer-events: none; }
+
+.btn-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid transparent;
+  transition: background-color var(--duration-fast) var(--ease-out-expo);
+}
+.btn-quiet:hover { background: var(--surface-raised); }
+
+.btn-pill { border-radius: 999px; }
+
+/* ------------------------------------------------------------------ chips -- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--foreground-muted);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  transition: background-color var(--duration-fast) var(--ease-out-expo),
+    color var(--duration-fast) var(--ease-out-expo),
+    border-color var(--duration-fast) var(--ease-out-expo);
+}
+.chip-gold { background: var(--accent-gold-surface); border-color: transparent; color: var(--secondary); }
+.chip-success { background: var(--success-surface); border-color: transparent; color: var(--success); }
+.chip-danger { background: var(--danger-surface); border-color: transparent; color: var(--danger); }
+.chip-warning { background: var(--warning-surface); border-color: transparent; color: var(--warning); }
+.chip-info { background: var(--info-surface); border-color: transparent; color: var(--info); }
+button.chip:hover { color: var(--foreground); border-color: var(--border-strong); }
+
+/* ------------------------------------------------------------------ input -- */
+.input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.85rem;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  transition: border-color var(--duration-fast) var(--ease-out-expo),
+    box-shadow var(--duration-fast) var(--ease-out-expo),
+    background-color var(--duration-fast) var(--ease-out-expo);
+}
+.input::placeholder { color: var(--foreground-subtle); }
+.input:hover { border-color: var(--border-strong); }
+.input:focus {
   outline: none;
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(232, 93, 130, 0.14);
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
-/* Focus ring utility for accessibility */
-.focus-ring:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+/* --------------------------------------------------------------- eyebrows -- */
+/* `.eyebrow` is the small-caps label used above sections and beside icons.
+   `.label` is the historical name, kept so nothing breaks mid-migration. */
+.eyebrow {
+  display: block;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--foreground-subtle);
+  line-height: 1.3;
+}
+.label {
+  display: block;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--foreground-subtle);
+  line-height: 1.3;
 }
 
-/* ============================================================
-   STAGE 3: Skeleton shimmer loader utility
-   ============================================================ */
-@keyframes shimmer {
-  0% {
-    background-position: -400px 0;
-  }
-  100% {
-    background-position: 400px 0;
-  }
+/* --------------------------------------------------------------- ornament -- */
+.hr-brass {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border) 10%,
+    var(--border-strong) 50%,
+    var(--border) 90%,
+    transparent
+  );
+}
+/* Brass rule with an actual gradient in the accent, for section breaks that
+   need to read as a deliberate flourish rather than a default border. */
+.rule-accent {
+  height: 2px;
+  width: 2.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--secondary), color-mix(in srgb, var(--secondary) 25%, transparent));
 }
 
+.link-ink {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--secondary) 32%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--duration-fast) var(--ease-out-expo),
+  color var(--duration-fast) var(--ease-out-expo);
+}
+.link-ink:hover { text-decoration-color: var(--secondary); }
+
+/* --------------------------------------------------------------- skeleton -- */
+@keyframes shimmer { 0% { background-position: -480px 0; } 100% { background-position: 480px 0; } }
 .skeleton {
   background: linear-gradient(
     90deg,
     var(--surface-raised) 25%,
-    color-mix(in srgb, var(--surface-raised) 60%, var(--border)) 50%,
+    color-mix(in srgb, var(--surface-raised) 55%, var(--border)) 50%,
     var(--surface-raised) 75%
   );
-  background-size: 800px 100%;
-  animation: shimmer 1.6s ease-in-out infinite;
-  border-radius: 0.75rem;
+  background-size: 960px 100%;
+  animation: shimmer 1.6s var(--ease-in-out-quart) infinite;
+  border-radius: var(--radius-sm);
+}
+
+} /* end @layer components */
+
+/* ------------------------------------------------------------------ focus -- */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* ------------------------------------------------------------ scrollbars -- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--foreground-subtle); background-clip: content-box; }
+
+/* --------------------------------------------------------------- movement -- */
+/* Shared keyframes for the CSS-driven half of the motion layer. JS-driven
+   reveals live in components/motion/Reveal.tsx. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes draw-in {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 var(--focus-ring); }
+  70% { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.anim-rise { animation: rise var(--duration-slower) var(--ease-out-expo) both; }
+.anim-fade { animation: fade-in var(--duration-slow) var(--ease-out-expo) both; }
+.spin { animation: spin 0.7s linear infinite; }
+.pulse-ring { animation: pulse-ring 1.8s var(--ease-out-expo) infinite; }
+
+/* Shared layout rhythm, so page sections line up without each one guessing. */
+.section-y { padding-block: var(--spacing-section); }
+.shell {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 640px) { .shell { padding-inline: 1.5rem; } }
+@media (min-width: 1024px) { .shell { padding-inline: 2rem; } }
+
+/* Respect the OS setting. Everything above collapses to a plain fade. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card[data-interactive="true"]:hover,
+  .btn-primary:hover { transform: none; }
 }

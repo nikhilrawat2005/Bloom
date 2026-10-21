@@ -36,14 +36,26 @@ function stripHtml(html: string): string {
   ).trim();
 }
 
+const FETCH_TIMEOUT_MS = 12_000;
+const MAX_FEED_BYTES = 3 * 1024 * 1024;
+
 async function fetchText(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: {
-      "User-Agent": "BloomOpportunityBot/1.0 (+https://bloom-weld-three.vercel.app)",
+      "User-Agent": "NexoraOpportunityBot/1.0 (+https://nexora.vercel.app)",
     },
+    // Without a timeout one hung upstream stalls Promise.allSettled for the
+    // whole run (allSettled waits on the hung promise) until the function dies.
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`Fetch failed for ${url}: ${res.status}`);
-  return res.text();
+  // Reject oversized bodies before/while buffering so one huge feed can't
+  // exhaust function memory.
+  const declared = Number(res.headers.get("content-length") || "0");
+  if (declared > MAX_FEED_BYTES) throw new Error(`Feed too large (${declared} bytes): ${url}`);
+  const buf = await res.arrayBuffer();
+  if (buf.byteLength > MAX_FEED_BYTES) throw new Error(`Feed too large: ${url}`);
+  return new TextDecoder().decode(buf);
 }
 
 /** Parses <item>...</item> blocks out of a raw RSS/XML string. */
@@ -88,7 +100,7 @@ async function fetchRssFeed(feedUrl: string): Promise<RawListing[]> {
 async function fetchDevpostHackathons(): Promise<RawListing[]> {
   const res = await fetch(
     "https://devpost.com/api/hackathons?status[]=open&order_by=recently-added",
-    { headers: { "User-Agent": "BloomOpportunityBot/1.0" } }
+    { headers: { "User-Agent": "NexoraOpportunityBot/1.0" } }
   );
   if (!res.ok) throw new Error(`Devpost API failed: ${res.status}`);
   const data = await res.json();
@@ -128,66 +140,38 @@ export async function fetchTrustedSources(): Promise<RawListing[]> {
   return results;
 }
 
-// ─── SCRAPED SOURCES — always start as "pending" for admin review ─────────
+// ─── SCRAPED SOURCES — auto-approved, no admin review needed ──────────────
 
 const SCRAPED_PAGES = [
-  // ── Women in STEM communities ──
-  { name: "AnitaB.org", url: "https://anitab.org/get-involved/scholarships/" },
-  { name: "Women Techmakers (Google)", url: "https://www.womentechmakers.com/" },
-  { name: "Girls in Tech", url: "https://girlsintech.org/" },
-  { name: "Society of Women Engineers (SWE)", url: "https://swe.org/scholarships/" },
+  // ── Global Student Tech Communities & Orgs ──
+  // Dead source removed: IEEE Students (403).
+  { name: "Major League Hacking (MLH)", url: "https://mlh.io/seasons/2026/events" },
+  { name: "Google Summer of Code", url: "https://summerofcode.withgoogle.com/" },
+  { name: "ACM Student Chapter", url: "https://www.acm.org/chapters/students" },
 
-  // ── Professional organizations ──
-  { name: "IEEE Women in Engineering", url: "https://wie.ieee.org/" },
-  { name: "ACM-W", url: "https://women.acm.org/" },
-  { name: "Lean In", url: "https://leanin.org/" },
-
-  // ── Hackathons & competitions ──
+  // ── Hackathons & Competitions ──
   { name: "Devfolio", url: "https://devfolio.co/hackathons" },
-  { name: "Unstop Hackathons", url: "https://unstop.com/hackathons" },
+  { name: "Unstop Competitions & Hackathons", url: "https://unstop.com/hackathons" },
   { name: "HackerEarth Challenges", url: "https://www.hackerearth.com/challenges/" },
   { name: "TechGig", url: "https://www.techgig.com/hackathon" },
 
-  // ── Conference discovery ──
-  { name: "10times", url: "https://10times.com/technology" },
+  // ── Conference Discovery ──
+  // Dead sources removed: 10times, All Conference Alert (403/timeouts).
   { name: "WikiCFP", url: "http://www.wikicfp.com/cfp/" },
-  { name: "All Conference Alert", url: "https://www.allconferencealert.com/" },
 
-  // ── Scholarships / fellowships (women in STEM, global) ──
-  { name: "British Council Women in STEM Scholarships", url: "https://study-uk.britishcouncil.org/scholarships/womens-scholarships-stem" },
-  { name: "AAUW Fellowships", url: "https://www.aauw.org/resources/programs/fellowships-grants/" },
-  { name: "L'Oréal-UNESCO For Women in Science", url: "https://www.forwomeninscience.com/" },
-  { name: "Zonta International – Amelia Earhart Fellowship", url: "https://www.zonta.org/Web/Programs/Amelia_Earhart_Fellowship" },
-  { name: "Schlumberger Foundation – Faculty for the Future", url: "https://www.fftf.slb.com/" },
-  { name: "MPOWER Women in STEM Scholarship", url: "https://www.mpowerfinancing.com/scholarships" },
-
-  // ── Internships / research programs ──
-  { name: "Pathways to Science", url: "https://www.pathwaystoscience.org/" },
-  { name: "SheKunj", url: "https://www.shekunj.com/" },
-  { name: "Outreachy", url: "https://www.outreachy.org/apply/" },
+  // ── International Student Fellowships & Research ──
   { name: "DAAD Scholarships", url: "https://www.daad.de/en/study-and-research-in-germany/scholarships/" },
-  { name: "Mitacs Globalink", url: "https://www.mitacs.ca/en/programs/globalink" },
+  { name: "Mitacs Globalink Research Internship", url: "https://www.mitacs.ca/en/programs/globalink" },
+  { name: "Pathways to Science", url: "https://www.pathwaystoscience.org/" },
+  { name: "Outreachy", url: "https://www.outreachy.org/apply/" },
+  { name: "CERN Student Programs", url: "https://careers.cern/students" },
 
-  // ── Coding communities ──
-  { name: "Women Who Code", url: "https://www.womenwhocode.com/" },
-  { name: "PyLadies", url: "https://pyladies.com/" },
-  { name: "Django Girls", url: "https://djangogirls.org/" },
-  { name: "Girls Who Code", url: "https://girlswhocode.com/" },
-  { name: "Rewriting the Code", url: "https://www.rewritingthecode.org/" },
-  { name: "Black Girls Code", url: "https://www.blackgirlscode.com/" },
-
-  // ── Broader STEM / science orgs ──
-  { name: "Association for Women in Science (AWIS)", url: "https://awis.org/" },
-  { name: "OWSD", url: "https://owsd.net/" },
-  { name: "Women in Data Science (WiDS)", url: "https://www.widsconference.org/" },
-  { name: "Women in Bio", url: "https://www.womeninbio.org/" },
-
-  // ── Space / aerospace ──
-  { name: "Space Kidz India", url: "https://spacekidzindia.in/" },
+  // ── Space / Aerospace & STEM Research ──
   { name: "NASA STEM Engagement", url: "https://www.nasa.gov/stem/" },
   { name: "ESA Education", url: "https://www.esa.int/Education" },
+  { name: "Space Kidz India", url: "https://spacekidzindia.in/" },
 
-  // ── General opportunity aggregators ──
+  // ── Student Opportunity Aggregators ──
   { name: "Opportunity Desk", url: "https://opportunitydesk.org/" },
   { name: "Youth Opportunities", url: "https://www.youthop.com/" },
 ];
@@ -209,7 +193,7 @@ export async function fetchScrapedSources(): Promise<RawListing[]> {
         rawText: text,
         sourceUrl: page.url,
         sourceType: "scraped" as const,
-        autoApprove: false,
+        autoApprove: true,
       };
     })
   );

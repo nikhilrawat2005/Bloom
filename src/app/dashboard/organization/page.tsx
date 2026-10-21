@@ -2,7 +2,8 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, addDoc, doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { authedFetch } from "@/lib/apiClient";
+import { collection, query, where, addDoc, doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -16,9 +17,87 @@ import {
   XCircle,
   Sparkles,
   Loader2,
-  Calendar,
+  Clock,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import type { OrgOpportunity, OrgOpportunityStatus, OrgRequest } from "@/lib/types";
+import { Button, Card, Chip, EmptyState, ErrorState, Field, Select, Stat, Textarea, type ChipTone } from "@/components/ui";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion/Reveal";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+const CATEGORY_OPTIONS = [
+  { value: "Scholarships", label: "Scholarships" },
+  { value: "Internships", label: "Internships" },
+  { value: "Hackathons", label: "Hackathons" },
+  { value: "Competitions", label: "Competitions" },
+  { value: "Research", label: "Research" },
+  { value: "Conferences", label: "Conferences" },
+  { value: "Fellowships", label: "Fellowships" },
+  { value: "Workshops", label: "Workshops" },
+  { value: "Exchange Programs", label: "Exchange Programs" },
+];
+
+/**
+ * These two maps exist because the original page picked status colours inline,
+ * with three separate ternaries each. Two of those branches referenced classes
+ * that do not exist (`bg-emerald-650`, `text-amber-650`, `text-red-650`,
+ * `text-slate-805`), so "approved" opportunities rendered as unstyled text.
+ */
+function opportunityStatusTone(status: OrgOpportunityStatus | string): ChipTone {
+  if (status === "approved") return "success";
+  if (status === "rejected") return "danger";
+  return "warning";
+}
+
+function applicationStatusTone(status: string): ChipTone {
+  if (status === "Shortlisted") return "gold";
+  if (status === "Rejected") return "danger";
+  return "neutral";
+}
+
+function PageSpinner() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-secondary" />
+    </div>
+  );
+}
+
+function StatusCallout({
+  tone,
+  icon,
+  title,
+  children,
+  action,
+}: {
+  tone: ChipTone;
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  const surface =
+    tone === "danger"
+      ? "border-danger/25 bg-danger-surface"
+      : tone === "warning"
+        ? "border-warning/25 bg-warning-surface"
+        : "border-border bg-surface-raised";
+  const accent = tone === "danger" ? "text-danger" : tone === "warning" ? "text-warning" : "text-secondary";
+
+  return (
+    <Reveal>
+      <div className="mx-auto max-w-lg space-y-4 py-16 text-center">
+        <span className={`mx-auto grid h-14 w-14 place-items-center rounded-lg border ${surface} ${accent}`}>
+          {icon}
+        </span>
+        <h1 className="font-display text-xl text-foreground">{title}</h1>
+        <div className="text-sm leading-relaxed text-foreground-muted">{children}</div>
+        {action}
+      </div>
+    </Reveal>
+  );
+}
 
 export default function OrgDashboardPage() {
   const { currentUser, profile, loading: authLoading } = useAuth();
@@ -26,6 +105,8 @@ export default function OrgDashboardPage() {
   const [opportunities, setOpportunities] = useState<OrgOpportunity[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shortlistingId, setShortlistingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
 
   const isOrg = profile?.role === "organization" || profile?.role === "admin";
 
@@ -114,14 +195,24 @@ export default function OrgDashboardPage() {
       setLoading(false);
     });
 
-    // Fetch candidate submissions / mock applications submitted to this org
+    // Fetch candidate submissions for programs THIS organization posted.
+    //
+    // Reading `applications` directly from the browser is not possible: the
+    // rules scope each document to its applicant (and to the org that posted the
+    // program), and Firestore rules cannot join an `org_opportunities` lookup
+    // against an `applications` query. So the list is fetched server-side, where
+    // the caller's uid is verified before their posted programs are resolved.
     const loadSubmissions = async () => {
-      const q = query(collection(db, "applications"), where("organization", "==", profile?.name || "Bloom Partner"));
-      const snap = await getDocs(q);
-      const list: any[] = [];
-      snap.forEach((d) => {
-        list.push({ id: d.id, ...d.data() });
-      });
+      if (!currentUser) return;
+      const res = await authedFetch("/api/organization/applications");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setActionError(data?.error || `Could not load applications (${res.status}).`);
+        setApplications([]);
+        return;
+      }
+      const data = await res.json();
+      const list: any[] = Array.isArray(data?.applications) ? data.applications : [];
       setApplications(list);
     };
     loadSubmissions();
@@ -144,7 +235,7 @@ export default function OrgDashboardPage() {
         country: "Global",
         category,
         field: field.trim() || "STEM",
-        applyLink: applyLink.trim() || "https://bloom-platform.org/apply",
+        applyLink: applyLink.trim() || "https://nexora.app/apply",
         requiredDocuments: ["Resume", "Certificate"],
         status: "pending" as OrgOpportunityStatus,
         applicationCount: 0,
@@ -169,154 +260,125 @@ export default function OrgDashboardPage() {
   };
 
   const handleShortlistCandidate = async (appId: string, status: "Shortlisted" | "Rejected") => {
+    setShortlistingId(appId);
+    setActionError("");
     try {
-      await updateDoc(doc(db, "applications", appId), {
-        status,
-        updatedAt: new Date().toISOString(),
+      const res = await authedFetch("/api/organization/applications/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId: appId, status }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `Could not update the application (${res.status}).`);
+      }
       setApplications((prev) =>
         prev.map((app) => (app.id === appId ? { ...app, status } : app))
       );
-      alert(`Candidate has been successfully: ${status}! 🌸`);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setActionError(err?.message || "Could not update the application.");
+    } finally {
+      setShortlistingId(null);
     }
   };
 
   if (authLoading || !currentUser) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   // Not yet an organization: show the self-service access request flow
   // instead of the org dashboard (and instead of redirecting away).
   if (!isOrg) {
     if (requestLoading) {
-      return (
-        <div className="min-h-[50vh] flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        </div>
-      );
+      return <PageSpinner />;
     }
 
     if (orgRequest?.status === "pending") {
       return (
-        <div className="max-w-lg mx-auto text-center py-20 space-y-4">
-          <div className="w-14 h-14 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center mx-auto">
-            <Building2 className="w-7 h-7" />
-          </div>
-          <h1 className="text-xl font-extrabold text-foreground">Request under review</h1>
-          <p className="text-sm text-foreground-muted">
-            Your request to register <strong>{orgRequest.orgName}</strong> as an organization
-            partner is pending admin approval. You'll get organization dashboard access as soon
-            as it's approved.
-          </p>
-        </div>
+        <StatusCallout
+          tone="warning"
+          icon={<Clock className="h-6 w-6" />}
+          title="Request under review"
+        >
+          Your request to register <strong className="text-foreground">{orgRequest.orgName}</strong> as an
+          organization partner is pending admin approval. You&apos;ll get organization dashboard
+          access as soon as it&apos;s approved.
+        </StatusCallout>
       );
     }
 
     if (orgRequest?.status === "rejected") {
       return (
-        <div className="max-w-lg mx-auto text-center py-20 space-y-4">
-          <div className="w-14 h-14 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto">
-            <XCircle className="w-7 h-7" />
-          </div>
-          <h1 className="text-xl font-extrabold text-foreground">Request not approved</h1>
-          <p className="text-sm text-foreground-muted">
-            Your request for <strong>{orgRequest.orgName}</strong> wasn't approved. If you believe
-            this was a mistake, you can submit a new request below.
-          </p>
-          <button
-            onClick={() => setOrgRequest(null)}
-            className="mt-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-2xl text-xs font-bold transition-all"
-          >
-            Submit a new request
-          </button>
-        </div>
+        <StatusCallout
+          tone="danger"
+          icon={<XCircle className="h-6 w-6" />}
+          title="Request not approved"
+          action={
+            <Button onClick={() => setOrgRequest(null)}>Submit a new request</Button>
+          }
+        >
+          Your request for <strong className="text-foreground">{orgRequest.orgName}</strong> wasn&apos;t
+          approved. If you believe this was a mistake, you can submit a new request below.
+        </StatusCallout>
       );
     }
 
     // No request yet — show the form
     return (
-      <div className="max-w-lg mx-auto py-14">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-7 h-7" />
+      <div className="mx-auto max-w-lg py-12">
+        <Reveal>
+          <div className="mb-8 text-center">
+            <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-lg border border-border bg-surface-raised text-secondary">
+              <Building2 className="h-6 w-6" />
+            </span>
+            <h1 className="font-display text-xl text-foreground">Become an organization partner</h1>
+            <p className="mt-2 text-sm leading-relaxed text-foreground-muted">
+              Post scholarships, fellowships, internships, or programs directly to NEXORA. An admin
+              will review your request before you get posting access.
+            </p>
           </div>
-          <h1 className="text-xl font-extrabold text-foreground">Become an organization partner</h1>
-          <p className="text-sm text-foreground-muted mt-2">
-            Post scholarships, fellowships, internships, or programs directly to Bloom. An admin
-            will review your request before you get posting access.
-          </p>
-        </div>
+        </Reveal>
 
-        <div className="bg-surface border border-border p-6 rounded-3xl shadow-sm space-y-4">
-          {reqError && (
-            <div className="text-xs bg-red-500/10 text-red-600 p-3 rounded-xl border border-red-500/20">
-              {reqError}
-            </div>
-          )}
+        <Reveal delay={0.08}>
+          <Card className="space-y-4 p-6">
+            {reqError && <ErrorState description={reqError} />}
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-1.5">
-              Organization Name
-            </label>
-            <input
+            <Field
+              label="Organization Name"
               type="text"
               value={reqOrgName}
               onChange={(e) => setReqOrgName(e.target.value)}
               placeholder="e.g. AnitaB.org India"
-              className="w-full text-sm px-4 py-3 bg-surface-raised border border-border rounded-2xl outline-none focus:border-primary text-foreground placeholder-foreground-muted"
+              required
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-1.5">
-              Website (optional)
-            </label>
-            <input
+            <Field
+              label="Website (optional)"
               type="text"
               value={reqWebsite}
               onChange={(e) => setReqWebsite(e.target.value)}
               placeholder="https://..."
-              className="w-full text-sm px-4 py-3 bg-surface-raised border border-border rounded-2xl outline-none focus:border-primary text-foreground placeholder-foreground-muted"
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-1.5">
-              Tell us about your organization
-            </label>
-            <textarea
+            <Textarea
+              label="Tell us about your organization"
               value={reqDescription}
               onChange={(e) => setReqDescription(e.target.value)}
               rows={4}
               placeholder="What does your organization do, and what kind of opportunities do you want to post?"
-              className="w-full text-sm px-4 py-3 bg-surface-raised border border-border rounded-2xl outline-none focus:border-primary text-foreground placeholder-foreground-muted resize-none"
+              required
             />
-          </div>
 
-          <button
-            onClick={submitOrgRequest}
-            disabled={reqSubmitting}
-            className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-sm py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-60"
-          >
-            {reqSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit Request"}
-          </button>
-        </div>
+            <Button onClick={submitOrgRequest} disabled={reqSubmitting} block>
+              {reqSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Request"}
+            </Button>
+          </Card>
+        </Reveal>
       </div>
     );
   }
 
   if (loading) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   // Analytics summary
@@ -325,270 +387,260 @@ export default function OrgDashboardPage() {
   const conversionRate = totalViews > 0 ? ((totalSubmissions / totalViews) * 100).toFixed(1) : 0;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="space-y-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-foreground flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-primary" /> Organization Hub
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Post opportunities, check candidate analytics, and shortlist candidates from submissions.
-          </p>
-        </div>
+      <Reveal>
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <span className="eyebrow text-secondary">Partner Workspace</span>
+            <h1 className="mt-2 flex items-center gap-2 font-display text-display-sm text-foreground">
+              <Building2 className="h-5 w-5 text-secondary" />
+              Organization Hub
+            </h1>
+            <p className="mt-2 text-sm text-foreground-muted">
+              Post opportunities, check candidate analytics, and shortlist candidates from submissions.
+            </p>
+          </div>
 
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-hover text-white font-semibold text-xs rounded-xl shadow-sm transition-all"
-        >
-          <Plus className="w-3.5 h-3.5" /> Post Opportunity
-        </button>
-      </div>
+          <Button
+            onClick={() => setShowAddForm(!showAddForm)}
+            leadingIcon={<Plus className="h-3.5 w-3.5" />}
+          >
+            Post Opportunity
+          </Button>
+        </div>
+      </Reveal>
 
       {/* Analytics Dashboard */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-            <Eye className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Opportunity Views</span>
-            <span className="text-xl font-extrabold text-slate-800">{totalViews} views</span>
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-primary/10 text-primary rounded-2xl">
-            <Users className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Applicants</span>
-            <span className="text-xl font-extrabold text-slate-800">{totalSubmissions} applied</span>
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-            <BarChart3 className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Conversion Ratio</span>
-            <span className="text-xl font-extrabold text-slate-800">{conversionRate}% match</span>
-          </div>
-        </div>
-      </div>
+      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StaggerItem>
+          <Stat
+            label="Opportunity Views"
+            value={totalViews}
+            hint={`${totalViews} views across ${opportunities.length} published programs`}
+            icon={<Eye className="h-4 w-4" />}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <Stat
+            label="Total Applicants"
+            value={totalSubmissions}
+            hint={`${totalSubmissions} applied to your programs`}
+            icon={<Users className="h-4 w-4" />}
+            tone="gold"
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <Stat
+            label="Conversion Ratio"
+            value={`${conversionRate}%`}
+            hint={`${totalSubmissions} applications per ${totalViews} views`}
+            icon={<BarChart3 className="h-4 w-4" />}
+            tone="success"
+          />
+        </StaggerItem>
+      </Stagger>
 
       {/* Add form */}
       {showAddForm && (
-        <div className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm animate-in fade-in duration-200">
-          <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-1">
-            <Sparkles className="w-4 h-4 text-primary" /> Publish Opportunity Program
-          </h3>
-          <form onSubmit={handlePostOpportunity} className="space-y-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Program Title</label>
-              <input
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, ease: EASE }}
+        >
+          <Card className="p-6">
+            <h2 className="mb-5 flex items-center gap-2 font-display text-base text-foreground">
+              <Sparkles className="h-4 w-4 text-secondary" />
+              Publish Opportunity Program
+            </h2>
+            <form
+              onSubmit={handlePostOpportunity}
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+            >
+              <Field
+                label="Program Title"
                 type="text"
                 placeholder="Google Generation Scholarship"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                className="w-full text-xs p-3 border border-slate-200 rounded-xl outline-none focus:border-primary"
               />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Field of study</label>
-              <input
+              <Field
+                label="Field of study"
                 type="text"
                 placeholder="e.g. Computer Science, Aerospace"
                 value={field}
                 onChange={(e) => setField(e.target.value)}
-                className="w-full text-xs p-3 border border-slate-200 rounded-xl outline-none focus:border-primary"
               />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deadline</label>
-              <input
+              <Field
+                label="Deadline"
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full text-xs p-3 border border-slate-200 rounded-xl outline-none focus:border-primary"
               />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Opportunity Category</label>
-              <select
+              <Select
+                label="Opportunity Category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full text-xs p-3 border border-slate-200 rounded-xl outline-none bg-white focus:border-primary"
-              >
-                <option value="Scholarships">Scholarships</option>
-                <option value="Internships">Internships</option>
-                <option value="Hackathons">Hackathons</option>
-                <option value="Competitions">Competitions</option>
-                <option value="Research Programs">Research Programs</option>
-                <option value="Conferences">Conferences</option>
-                <option value="Fellowships">Fellowships</option>
-              </select>
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Program Description</label>
-              <textarea
+                options={CATEGORY_OPTIONS}
+              />
+              <Textarea
+                label="Program Description"
                 rows={3}
                 placeholder="Details of the opportunity..."
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
                 required
-                className="w-full text-xs p-3 border border-slate-200 rounded-xl outline-none focus:border-primary"
-              ></textarea>
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Eligibility criteria</label>
-              <input
+                className="sm:col-span-2"
+              />
+              <Field
+                label="Eligibility criteria"
                 type="text"
                 placeholder="e.g. Open to female students enrolled in Bachelor's program."
                 value={eligibility}
                 onChange={(e) => setEligibility(e.target.value)}
-                className="w-full text-xs p-3 border border-slate-200 rounded-xl outline-none focus:border-primary"
+                className="sm:col-span-2"
               />
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Application Link</label>
-              <input
+              <Field
+                label="Application Link"
                 type="url"
                 placeholder="https://company.com/careers"
                 value={applyLink}
                 onChange={(e) => setApplyLink(e.target.value)}
-                className="w-full text-xs p-3 border border-slate-200 rounded-xl outline-none focus:border-primary"
+                className="sm:col-span-2"
               />
-            </div>
-            <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary-hover shadow-sm"
-              >
-                Publish Program
-              </button>
-            </div>
-          </form>
-        </div>
+              <div className="flex justify-end gap-2 pt-2 sm:col-span-2">
+                <Button type="button" variant="secondary" onClick={() => setShowAddForm(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Publish Program</Button>
+              </div>
+            </form>
+          </Card>
+        </motion.div>
       )}
 
       {/* Main grids: Published list & Candidate Applications */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Published opportunities */}
-        <div className="lg:col-span-2 space-y-6">
-          <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-1.5">
-            <FileSpreadsheet className="w-5 h-5 text-primary" /> Published Opportunities ({opportunities.length})
-          </h3>
+        <section className="space-y-5 lg:col-span-2">
+          <h2 className="flex items-center gap-2 font-display text-base text-foreground">
+            <FileSpreadsheet className="h-4.5 w-4.5 text-secondary" />
+            Published Opportunities
+            <Chip>{opportunities.length}</Chip>
+          </h2>
 
-          <div className="space-y-4">
-            {opportunities.map((opp) => (
-              <div
-                key={opp.id}
-                className="bg-white border border-slate-100 p-5 rounded-3xl shadow-sm space-y-3"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <span className="text-[9px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded">
-                      {opp.category}
-                    </span>
-                    <h4 className="font-bold text-slate-800 text-sm mt-2">{opp.title}</h4>
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase mt-0.5">
-                      Views: {opp.viewCount} • Applicants: {opp.applicationCount}
+          {opportunities.length === 0 ? (
+            <EmptyState
+              icon={<Building2 className="h-5 w-5" />}
+              title="No published programs yet"
+              description="Click the Post Opportunity button to publish women-focused scholarships or hackathons."
+            />
+          ) : (
+            <Stagger className="space-y-3">
+              {opportunities.map((opp) => (
+                <StaggerItem key={opp.id}>
+                  <Card className="space-y-3 p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <Chip tone="gold">{opp.category}</Chip>
+                        <h3 className="mt-2 font-display text-base leading-snug text-foreground">
+                          {opp.title}
+                        </h3>
+                        <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-foreground-muted">
+                          <span className="inline-flex items-center gap-1">
+                            <Eye className="h-3.5 w-3.5" />
+                            {opp.viewCount} views
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5" />
+                            {opp.applicationCount} applicants
+                          </span>
+                        </p>
+                      </div>
+                      <Chip tone={opportunityStatusTone(opp.status)}>{opp.status}</Chip>
+                    </div>
+                    <p className="text-sm leading-relaxed text-foreground-muted line-clamp-2">
+                      {opp.description}
                     </p>
-                  </div>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${
-                    opp.status === "approved"
-                      ? "bg-emerald-50 text-emerald-650"
-                      : opp.status === "rejected"
-                      ? "bg-red-50 text-red-650"
-                      : "bg-amber-50 text-amber-650"
-                  }`}>
-                    {opp.status}
-                  </span>
-                </div>
-                <p className="text-slate-600 text-xs leading-relaxed line-clamp-2">{opp.description}</p>
-              </div>
-            ))}
-
-            {opportunities.length === 0 && (
-              <div className="text-center py-16 bg-white border border-slate-100 rounded-3xl">
-                <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-2" />
-                <h4 className="font-bold text-slate-805 text-sm">No published programs yet</h4>
-                <p className="text-slate-500 text-xs mt-1">
-                  Click the Post Opportunity button to publish women-focused scholarships or hackathons.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+                  </Card>
+                </StaggerItem>
+              ))}
+            </Stagger>
+          )}
+        </section>
 
         {/* Candidate evaluation tracker */}
-        <div className="space-y-6">
-          <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-1.5">
-            <Users className="w-5 h-5 text-primary" /> Review Submissions
-          </h3>
+        <section className="space-y-5">
+          <h2 className="flex items-center gap-2 font-display text-base text-foreground">
+            <Users className="h-4.5 w-4.5 text-secondary" />
+            Review Submissions
+            <Chip>{applications.length}</Chip>
+          </h2>
 
-          <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
-            {applications.map((app) => (
-              <div key={app.id} className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm space-y-3">
-                <div className="space-y-0.5">
-                  <span className="text-[8px] font-bold text-slate-400 uppercase">Program Applied</span>
-                  <h5 className="font-bold text-slate-800 text-xs leading-snug">{app.opportunityTitle}</h5>
-                  <p className="text-[9px] text-slate-500 font-semibold">Candidate UID: {app.uid.slice(0, 10)}...</p>
-                </div>
+          {actionError && <ErrorState description={actionError} />}
 
-                <div className="flex justify-between items-center pt-2 border-t border-slate-50 gap-2">
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
-                    app.status === "Shortlisted"
-                      ? "bg-primary/10 text-primary"
-                      : app.status === "Rejected"
-                      ? "bg-red-50 text-red-650"
-                      : "bg-slate-50 text-slate-500"
-                  }`}>
-                    {app.status}
-                  </span>
-                  {app.status === "Applied" && (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => handleShortlistCandidate(app.id, "Shortlisted")}
-                        className="p-1 hover:bg-primary/10 rounded text-primary"
-                        title="Shortlist Candidate"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleShortlistCandidate(app.id, "Rejected")}
-                        className="p-1 hover:bg-red-50 rounded text-red-500"
-                        title="Reject Candidate"
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+          {applications.length === 0 ? (
+            <EmptyState
+              icon={<Users className="h-5 w-5" />}
+              title="No candidate applications"
+              description="Once users submit applications targeting your programs, they will appear here."
+            />
+          ) : (
+            <ul className="max-h-[460px] space-y-3 overflow-y-auto pr-1">
+              {applications.map((app) => {
+                const busy = shortlistingId === app.id;
+                return (
+                  <li key={app.id}>
+                    <Card className="space-y-3 p-4">
+                      <div className="space-y-1">
+                        <span className="eyebrow">Program Applied</span>
+                        <h3 className="text-sm font-medium leading-snug text-foreground">
+                          {app.opportunityTitle}
+                        </h3>
+                        <p className="text-xs text-foreground-subtle">
+                          Candidate UID: {app.uid.slice(0, 10)}...
+                        </p>
+                      </div>
 
-            {applications.length === 0 && (
-              <div className="text-center py-12 bg-white border border-slate-100 rounded-3xl">
-                <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <h5 className="font-bold text-slate-700 text-xs">No candidate applications</h5>
-                <p className="text-slate-500 text-[10px] mt-1">
-                  Once users submit applications targeting your programs, they will appear here.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+                      <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+                        <Chip tone={applicationStatusTone(app.status)}>{app.status}</Chip>
+                        {app.status === "Applied" && (
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleShortlistCandidate(app.id, "Shortlisted")}
+                              disabled={busy}
+                              title="Shortlist Candidate"
+                              aria-label={`Shortlist candidate for ${app.opportunityTitle}`}
+                              className="grid h-7 w-7 place-items-center rounded-sm text-success transition-colors duration-fast hover:bg-success-surface disabled:opacity-50"
+                            >
+                              {busy ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <CheckCircle className="h-4 w-4" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleShortlistCandidate(app.id, "Rejected")}
+                              disabled={busy}
+                              title="Reject Candidate"
+                              aria-label={`Reject candidate for ${app.opportunityTitle}`}
+                              className="grid h-7 w-7 place-items-center rounded-sm text-danger transition-colors duration-fast hover:bg-danger-surface disabled:opacity-50"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-// Central type definitions for Phase 3 — Bloom Opportunity Ecosystem
+// Central type definitions for Phase 3 — NEXORA Opportunity Ecosystem
 // All modules import from here. Do not define model interfaces elsewhere.
 
 // ─── WALLET ────────────────────────────────────────────────────────────────
@@ -8,8 +8,12 @@ export type WalletCategory =
   | "Certificates"
   | "Awards"
   | "Projects"
-  | "Portfolio"
-  | "ID Documents";
+  | "Results"
+  | "ID Documents"
+  | "Other";
+
+/** "manual" means the user picked it by hand, so auto re-scan must never move it. */
+export type WalletCategorySource = "auto" | "manual";
 
 export interface WalletDocument {
   id: string;
@@ -21,55 +25,67 @@ export interface WalletDocument {
   sizeBytes: number;
   mimeType: string;
   uploadedAt: string;
+  categorySource?: WalletCategorySource;
+  categoryConfidence?: number;
+  categoryReason?: string;
+  /** Set when classification was weak, so the UI can flag it for review. */
+  categoryNeedsReview?: boolean;
+  categoryUpdatedAt?: string;
+  /** First slice of the file's real text. The performance engine reads from here. */
+  extractedText?: string;
+  /** Structured facts parsed out of the text (GPA, issuer, skills, year, ...). */
+  insights?: DocumentInsights;
 }
 
-// ─── APPLICATION TRACKER ───────────────────────────────────────────────────
+// ─── DOCUMENT INSIGHTS ─────────────────────────────────────────────────────
 
-// Kept for backward compatibility with any code still importing the old
-// closed union. New code should treat status as a plain string (see
-// ApplicationEntry["status"] below) since valid stages now depend on
-// the entry's `type` — see TRACKER_TYPE_CONFIG in trackerTypes.ts.
-export type ApplicationStatus =
-  | "Applied"
-  | "Shortlisted"
-  | "Interview"
-  | "Rejected"
-  | "Selected"
-  | "Offer Received";
+/** Facts pulled out of a single document's text. Every field is optional. */
+export interface DocumentInsights {
+  institution?: string;
+  issuer?: string;
+  /** Normalised to 0-100 so scores are comparable across grading scales. */
+  gpa?: number;
+  gpaRaw?: string;
+  percentage?: number;
+  rollNumber?: string;
+  graduationYear?: number;
+  documentDate?: string;
+  field?: string;
+  skills: string[];
+  technologies: string[];
+  languages: string[];
+  orgType?: "government" | "academic" | "ngo" | "private" | "unknown";
+  isGovtId?: boolean;
+  awardLevel?: "international" | "national" | "state" | "university" | "college";
+  contactEmail?: string;
+  contactPhone?: string;
+  links: string[];
+  keywords: string[];
+  // Marksheet-specific (Results category)
+  marksheetClass?: "10" | "12";
+  marksheetStream?: "science" | "commerce" | "arts" | "vocational";
+  marksheetBoard?: string;
+  marksheetSubjects?: Array<{ name: string; marks: number; maxMarks?: number }>;
+}
 
-// Tracker "type" — determines which stages / Kanban columns apply to an
-// entry. See src/lib/trackerTypes.ts for the stage list + colors per type.
-export type ApplicationType =
-  | "Job"
-  | "Internship"
-  | "Hackathon"
-  | "Scholarship"
-  | "Research"
-  | "Other";
+// ─── PROFILE LINKS ─────────────────────────────────────────────────────────
 
-export interface ApplicationEntry {
+/** How a saved public link is treated by the UI. */
+export type ProfileLinkKind = "linkedin" | "github" | "leetcode" | "codechef" | "codeforces" | "hackerrank" | "behance" | "dribbble" | "devto" | "hashnode" | "codepen" | "notion" | "medium" | "substack" | "kaggle" | "figma" | "youtube" | "twitter" | "instagram" | "facebook" | "threads" | "mastodon" | "telegram" | "website" | "other";
+
+/** A public profile URL the user saved by hand — LinkedIn, GitHub, anything. */
+export interface ProfileLink {
   id: string;
-  uid: string;
-  opportunityTitle: string;
-  organization: string;
-  deadline: string;
-  applyLink?: string;
-  notes?: string;
-  // Widened from the old closed union to a plain string: each ApplicationType
-  // has its own stage list (see trackerTypes.ts), so a single fixed union
-  // across every type no longer applies. Always keep it in sync with an
-  // entry's `type` — use TRACKER_TYPE_CONFIG[type].stages as the source of truth.
-  status: string;
-  // Defaults to "Other" for legacy entries that predate this field.
-  type: ApplicationType;
-  // Days-before-deadline thresholds (7/3/1) the backend has already emailed
-  // for this entry, so it never sends the same alert twice.
-  sentAlerts?: number[];
-  createdAt: string;
-  updatedAt: string;
+  url: string;
+  kind: ProfileLinkKind;
+  /** Shown in the list. Defaults to the kind's name, e.g. "LinkedIn". */
+  label?: string;
+  addedAt?: string;
+  /** Where it came from: typed by the user, or read out of an uploaded document. */
+  origin?: "manual" | "document";
 }
 
-// ─── CALENDAR ──────────────────────────────────────────────────────────────
+// ─── CALENDAR ──────────────────────────────────────────────────────
 
 export type CalendarEventType =
   | "deadline"

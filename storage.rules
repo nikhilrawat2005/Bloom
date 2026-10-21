@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// Firebase Storage rules for NEXORA.
+//
+// The application does NOT store user files in Cloud Storage: wallet documents
+// are uploaded to Cloudinary through the authenticated
+// POST /api/wallet/upload route, which derives the folder from the verified
+// token uid rather than from anything the client sends.
+//
+// There is no storage bucket path that a browser client is meant to write, so
+// this file denies everything by default. If a future feature needs real
+// uploads here, add an explicit per-user rule under `match /users/{uid}/{allPaths=**}`
+// rather than relaxing this file.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

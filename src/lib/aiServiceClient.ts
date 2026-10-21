@@ -1,3 +1,7 @@
+import { authedFetch } from "@/lib/apiClient";
+import type { PerformanceAssessment, SavedOpportunityMatch } from "@/lib/performanceTypes";
+import type { ProfileEnrichment } from "@/lib/enrichmentTypes";
+
 export interface ResumeAnalysisResult {
   atsScore: number;
   strengths: string[];
@@ -7,164 +11,318 @@ export interface ResumeAnalysisResult {
   improvementSuggestions: string[];
 }
 
-export interface RoadmapMilestone {
-  title: string;
-  description: string;
-  recommendedCourses: string[];
-  recommendedProjects: string[];
-  timeline: string;
-  resources: string[];
-}
 
-export interface RoadmapResult {
-  milestones: RoadmapMilestone[];
-}
 
-export interface InterviewFeedbackResult {
-  technicalFeedback: string;
-  communicationFeedback: string;
-  confidenceScore: number;
-  improvementSuggestions: string[];
-  followUpQuestions: string[];
+/**
+ * Thrown when the AI backend could not produce a real answer.
+ *
+ * This class used to swallow every failure and return a hardcoded, plausible
+ * looking result — a fixed `atsScore: 65`, a canned chatbot reply, a canned
+ * `confidenceScore: 70` — which the UI then rendered as if a model had produced
+ * it. Fabricated scores are worse than no scores: a student acted on them.
+ * Callers must handle this and show an honest "unavailable" state.
+ */
+export class AIServiceUnavailableError extends Error {
+  readonly reason: string;
+  constructor(reason: string, message?: string) {
+    super(message || "The AI service is unavailable right now.");
+    this.name = "AIServiceUnavailableError";
+    this.reason = reason;
+  }
 }
 
 export class AIServiceClient {
-  private static async postRequest(action: string, data: any): Promise<any> {
+  private static async postRequest(action: string, data: unknown): Promise<any> {
+    let response: Response;
     try {
-      const response = await fetch("/api/ai", {
+      response = await authedFetch("/api/ai", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, data }),
       });
+    } catch (e) {
+      console.error(`AI Client network error for action ${action}:`, e);
+      throw new AIServiceUnavailableError("network", "Could not reach the AI service. Check your connection.");
+    }
 
-      if (!response.ok) {
+    if (!response.ok) {
+      let message = `The AI service returned ${response.status}.`;
+      try {
         const errData = await response.json();
-        throw new Error(errData.error || `Server responded with status ${response.status}`);
+        if (errData && typeof errData.error === "string" && errData.error.length > 0) {
+          message = errData.error;
+        }
+      } catch {
+        // non-JSON error body; keep the status-derived message
       }
-
-      const body = await response.json();
-      return body.result;
-    } catch (error: any) {
-      console.error(`AI Client Error for action ${action}:`, error);
-      throw error;
+      if (response.status === 401) {
+        throw new AIServiceUnavailableError("unauthenticated", "Please sign in to use AI features.");
+      }
+      if (response.status === 429) {
+        throw new AIServiceUnavailableError("rate_limited", "Too many AI requests. Wait a moment and try again.");
+      }
+      throw new AIServiceUnavailableError("provider", message);
     }
-  }
 
-  public static async explainEligibility(
-    opportunityTitle: string,
-    mismatches: string[],
-    eligibilityPercentage: number
-  ): Promise<string> {
-    try {
-      return await this.postRequest("explainEligibility", {
-        opportunityTitle,
-        mismatches,
-        eligibilityPercentage,
-      });
-    } catch {
-      return "Due to temporary AI service limitations, we could not generate a personalized explanation. Please review the missing criteria checklist above.";
-    }
+    const body = await response.json();
+    return body?.result;
   }
 
   public static async analyzeResume(resumeText: string): Promise<ResumeAnalysisResult> {
-    try {
-      return await this.postRequest("analyzeResume", { resumeText });
-    } catch {
-      // Return rule-based / fallback mock response so app never crashes
-      return {
-        atsScore: 65,
-        strengths: ["Clean resume structure", "Relevant education background"],
-        weaknesses: ["Lack of action verbs", "Skills list is too short"],
-        missingSkills: ["Cloud Technologies", "CI/CD pipelines"],
-        formattingFeedback: "Consider using single-column layouts for improved ATS readability.",
-        improvementSuggestions: [
-          "Quantify your accomplishments using metrics.",
-          "Add more technical skills relevant to your career targets.",
-        ],
-      };
+    const result = await this.postRequest("analyzeResume", { resumeText });
+    if (!result || typeof result !== "object" || typeof result.atsScore !== "number") {
+      throw new AIServiceUnavailableError("malformed", "The AI returned an unreadable resume analysis.");
     }
-  }
-
-  public static async generateRoadmap(
-    currentSkills: string,
-    education: string,
-    careerGoal: string,
-    availableTime: string
-  ): Promise<RoadmapResult> {
-    try {
-      return await this.postRequest("generateRoadmap", {
-        currentSkills,
-        education,
-        careerGoal,
-        availableTime,
-      });
-    } catch {
-      // Fallback predefined template roadmap
-      return {
-        milestones: [
-          {
-            title: "Foundation Training",
-            description: "Strengthen core fundamentals in computer science, logic, and software engineering concepts.",
-            recommendedCourses: ["CS50 Introduction to Computer Science", "Data Structures & Algorithms Basics"],
-            recommendedProjects: ["Basic CLI Calculator", "Personal Portfolio Page"],
-            timeline: "Weeks 1-4",
-            resources: ["freeCodeCamp", "Coursera"],
-          },
-          {
-            title: "Advanced Specialization",
-            description: "Deep dive into your chosen track, mastering key frameworks and database integrations.",
-            recommendedCourses: ["Full-Stack Web Development Course", "Modern Database Management"],
-            recommendedProjects: ["Task Manager Web App", "Interactive Community Portal"],
-            timeline: "Weeks 5-12",
-            resources: ["MDN Web Docs", "Udemy"],
-          },
-        ],
-      };
-    }
+    return {
+      atsScore: result.atsScore,
+      strengths: Array.isArray(result.strengths) ? result.strengths : [],
+      weaknesses: Array.isArray(result.weaknesses) ? result.weaknesses : [],
+      missingSkills: Array.isArray(result.missingSkills) ? result.missingSkills : [],
+      formattingFeedback: typeof result.formattingFeedback === "string" ? result.formattingFeedback : "",
+      improvementSuggestions: Array.isArray(result.improvementSuggestions) ? result.improvementSuggestions : [],
+    };
   }
 
   public static async getChatbotResponse(
     message: string,
     history: { role: "user" | "model"; text: string }[],
-    profileContext: any
+    profileContext: unknown
   ): Promise<string> {
+    const result = await this.postRequest("chatbot", { message, history, profileContext });
+    if (typeof result !== "string" || result.trim().length === 0) {
+      throw new AIServiceUnavailableError("malformed", "The AI returned an empty response.");
+    }
+    return result;
+  }
+
+  /**
+   * Multi-file career chat. Posts an optional set of attachments together with
+   * the message; the server extracts readable text from each and answers in
+   * markdown. Returns the model's reply.
+   */
+  public static async chatWithFiles(
+    message: string,
+    history: { role: "user" | "model"; text: string }[],
+    profileContext: unknown,
+    files: File[] = [],
+    options?: { mode?: "advisor" | "interview"; targetJobDescription?: string }
+  ): Promise<{ reply: string; files: { name: string; kind: "doc" | "image" }[] }> {
+    let response: Response;
     try {
-      return await this.postRequest("chatbot", { message, history, profileContext });
+      const formData = new FormData();
+      formData.append("message", message);
+      formData.append("history", JSON.stringify(history));
+      formData.append("profileContext", JSON.stringify(profileContext ?? {}));
+      if (options?.mode) {
+        formData.append("mode", options.mode);
+      }
+      if (options?.targetJobDescription) {
+        formData.append("targetJobDescription", options.targetJobDescription);
+      }
+      for (const file of files) {
+        formData.append("files", file, file.name);
+      }
+      response = await authedFetch("/api/chat", { method: "POST", body: formData });
+    } catch (e) {
+      console.error("AI Client network error for chat:", e);
+      throw new AIServiceUnavailableError("network", "Could not reach the AI service. Check your connection.");
+    }
+
+    if (!response.ok) {
+      let message = `The AI service returned ${response.status}.`;
+      try {
+        const errData = await response.json();
+        if (errData && typeof errData.error === "string" && errData.error.length > 0) {
+          message = errData.error;
+        }
+      } catch {
+        // non-JSON error body; keep the status-derived message
+      }
+      if (response.status === 401) {
+        throw new AIServiceUnavailableError("unauthenticated", "Please sign in to use AI features.");
+      }
+      if (response.status === 429) {
+        throw new AIServiceUnavailableError("rate_limited", "Too many AI requests. Wait a moment and try again.");
+      }
+      throw new AIServiceUnavailableError("provider", message);
+    }
+
+    const body = await response.json();
+    if (typeof body?.reply !== "string" || body.reply.trim().length === 0) {
+      throw new AIServiceUnavailableError("malformed", "The AI returned an empty response.");
+    }
+    return {
+      reply: body.reply,
+      files: Array.isArray(body.files) ? body.files : [],
+    };
+  }
+
+
+
+  /**
+   * Full-person performance assessment. Sends the wallet documents, saved
+   * opportunities and profile the client has loaded from Firestore; the server
+   * turns them into an evidence-backed profile of the student.
+   */
+  public static async analyzePerformance(context: {
+    profile: unknown;
+    walletDocuments: unknown[];
+    savedOpportunities: unknown[];
+    enrichment?: ProfileEnrichment | null;
+  }): Promise<PerformanceAssessment> {
+    let response: Response;
+    try {
+      response = await authedFetch("/api/performance/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(context),
+      });
+    } catch (e) {
+      console.error("AI Client network error for performance analysis:", e);
+      throw new AIServiceUnavailableError("network", "Could not reach the AI service. Check your connection.");
+    }
+
+    if (!response.ok) {
+      let message = `The AI service returned ${response.status}.`;
+      try {
+        const errData = await response.json();
+        if (errData && typeof errData.error === "string" && errData.error.length > 0) {
+          message = errData.error;
+        }
+      } catch {
+        // non-JSON error body; keep the status-derived message
+      }
+      if (response.status === 401) {
+        throw new AIServiceUnavailableError("unauthenticated", "Please sign in to use AI features.");
+      }
+      if (response.status === 429) {
+        throw new AIServiceUnavailableError("rate_limited", "Too many requests. Wait a moment and try again.");
+      }
+      throw new AIServiceUnavailableError("provider", message);
+    }
+
+    const body = await response.json();
+    if (!body?.assessment || typeof body.assessment !== "object") {
+      throw new AIServiceUnavailableError("malformed", "The AI returned an unreadable assessment.");
+    }
+    return body.assessment as PerformanceAssessment;
+  }
+
+  /**
+   * Generates a dynamic, structured learning roadmap for any specified career role.
+   */
+  public static async generateRoadmap(role: string): Promise<any> {
+    const raw = await this.postRequest("generateRoadmap", { role });
+    try {
+      return typeof raw === "string" ? JSON.parse(raw) : raw;
     } catch {
-      return "Hello! The AI Assistant is currently operating in offline backup mode. I can help answer general questions. Let me know if you need help matching opportunities or updating your profile!";
+      throw new AIServiceUnavailableError("malformed", "Failed to parse roadmap structure from AI.");
     }
   }
 
-  public static async getInterviewFeedback(
-    jobTitle: string,
-    answers: { question: string; answer: string }[]
-  ): Promise<InterviewFeedbackResult> {
+  /**
+   * Visits the student's saved links (GitHub + coding platforms) and returns
+   * factual enrichment (repos, stars, commits, platform stats) plus improved
+   * platform labels to write back onto the link documents.
+   */
+  public static async enrichProfile(
+    links: { url: string; kind?: string; id?: string }[]
+  ): Promise<{ enrichment: ProfileEnrichment; labels: { url: string; kind: string; platform: string; label: string }[] }> {
+    let response: Response;
     try {
-      return await this.postRequest("interview", { jobTitle, answers });
-    } catch {
-      return {
-        technicalFeedback: "The response demonstrates a basic conceptual understanding. Try to elaborate on structural details and system designs.",
-        communicationFeedback: "Answers are clear but could be more structured. Consider using the STAR method (Situation, Task, Action, Result) for explaining project work.",
-        confidenceScore: 70,
-        improvementSuggestions: [
-          "Provide concrete code or architectural examples.",
-          "Keep answers structured and avoid running off-topic.",
-        ],
-        followUpQuestions: [
-          "Can you explain a challenging bug you recently fixed?",
-          "How do you ensure test coverage for your backend endpoints?",
-        ],
-      };
+      response = await authedFetch("/api/profile/enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ links }),
+      });
+    } catch (e) {
+      console.error("AI Client network error for profile enrichment:", e);
+      throw new AIServiceUnavailableError("network", "Could not reach the enrichment service. Check your connection.");
     }
+
+    if (!response.ok) {
+      let message = `The enrichment service returned ${response.status}.`;
+      try {
+        const errData = await response.json();
+        if (errData && typeof errData.error === "string" && errData.error.length > 0) {
+          message = errData.error;
+        }
+      } catch {
+        // non-JSON error body; keep the status-derived message
+      }
+      if (response.status === 401) {
+        throw new AIServiceUnavailableError("unauthenticated", "Please sign in to use AI features.");
+      }
+      if (response.status === 429) {
+        throw new AIServiceUnavailableError("rate_limited", "Too many enrichment requests. Wait a moment and try again.");
+      }
+      throw new AIServiceUnavailableError("provider", message);
+    }
+
+    const body = await response.json();
+    if (!body?.enrichment || typeof body.enrichment !== "object") {
+      throw new AIServiceUnavailableError("malformed", "The enrichment service returned an unreadable response.");
+    }
+    return {
+      enrichment: body.enrichment as ProfileEnrichment,
+      labels: Array.isArray(body.labels) ? body.labels : [],
+    };
   }
 
-  public static async trackConfidence(scores: any): Promise<string> {
+  /**
+   * Qualitative role-fit analysis for the opportunities the student has saved.
+   * Returns, per saved opportunity, plus points drawn from their real profile and
+   * gaps/actions to improve their odds. No scores.
+   */
+  public static async analyzeSavedOpportunities(context: {
+    profile: unknown;
+    walletDocuments: unknown[];
+    savedOpportunities: unknown[];
+    enrichment?: ProfileEnrichment | null;
+  }): Promise<SavedOpportunityMatch[]> {
+    let response: Response;
     try {
-      return await this.postRequest("trackConfidence", { scores });
-    } catch {
-      return "Excellent effort! You have completed multiple mock exercises and profile scans this week. Keep maintaining this pace to achieve your technical targets.";
+      response = await authedFetch("/api/opportunities/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(context),
+      });
+    } catch (e) {
+      console.error("AI Client network error for saved-opportunity matching:", e);
+      throw new AIServiceUnavailableError("network", "Could not reach the AI service. Check your connection.");
     }
+
+    if (!response.ok) {
+      let message = `The AI service returned ${response.status}.`;
+      try {
+        const errData = await response.json();
+        if (errData && typeof errData.error === "string" && errData.error.length > 0) {
+          message = errData.error;
+        }
+      } catch {
+        // non-JSON error body; keep the status-derived message
+      }
+      if (response.status === 401) {
+        throw new AIServiceUnavailableError("unauthenticated", "Please sign in to use AI features.");
+      }
+      if (response.status === 429) {
+        throw new AIServiceUnavailableError("rate_limited", "Too many requests. Wait a moment and try again.");
+      }
+      throw new AIServiceUnavailableError("provider", message);
+    }
+
+    const body = await response.json();
+    if (!Array.isArray(body?.matches)) {
+      throw new AIServiceUnavailableError("malformed", "The AI returned an unreadable match analysis.");
+    }
+    return body.matches as SavedOpportunityMatch[];
+  }
+
+  public static async trackConfidence(scores: unknown): Promise<string> {
+    const result = await this.postRequest("trackConfidence", { scores });
+    if (typeof result !== "string" || result.trim().length === 0) {
+      throw new AIServiceUnavailableError("malformed", "The AI returned an empty progress summary.");
+    }
+    return result;
   }
 }

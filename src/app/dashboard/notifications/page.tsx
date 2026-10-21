@@ -3,13 +3,15 @@
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
 import { db } from "@/lib/firebase";
-import { doc, updateDoc, deleteDoc, writeBatch, collection, getDocs } from "firebase/firestore";
-import { useState } from "react";
+import { doc, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { refreshDeadlineAlerts } from "@/lib/automationEngine";
 import {
   Bell,
   Check,
   CheckSquare,
   Clock,
+  AlarmClock,
   Sparkles,
   Briefcase,
   Layers,
@@ -19,11 +21,53 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button, Card, Chip, EmptyState } from "@/components/ui";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion/Reveal";
+import type { NotificationCategory } from "@/lib/types";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+const FILTERS: { key: string; label: string }[] = [
+  { key: "all", label: "All Alerts" },
+  { key: "unread", label: "Unread" },
+  { key: "deadline_alert", label: "Deadlines" },
+  { key: "new_opportunity", label: "New Matches" },
+  { key: "application_update", label: "Updates" },
+  { key: "ai_suggestion", label: "AI Suggestions" },
+];
+
+/**
+ * Each category used to carry its own hand-written colour pair
+ * (`text-red-500`, `text-blue-500`, `text-amber-500`, …). That meant a red
+ * alert on this page was not necessarily the same red as a red deadline
+ * elsewhere. One tone per category, taken from the tokens.
+ */
+const CATEGORY_META: Record<
+  NotificationCategory,
+  { icon: typeof Bell; tone: "danger" | "info" | "neutral" | "warning" | "gold" }
+> = {
+  deadline_alert: { icon: Clock, tone: "danger" },
+  interview_reminder: { icon: AlarmClock, tone: "warning" },
+  new_opportunity: { icon: Briefcase, tone: "info" },
+  application_update: { icon: Layers, tone: "neutral" },
+  ai_suggestion: { icon: Sparkles, tone: "gold" },
+};
+
+const categoryLabel = (category: string) => category.replace("_", " ");
 
 export default function NotificationsPage() {
   const { currentUser } = useAuth();
   const { notifications, loading } = useNotifications(currentUser?.uid);
   const [filter, setFilter] = useState<string>("all");
+
+  // Refresh deadline milestone alerts every time the user opens this page
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    refreshDeadlineAlerts(currentUser.uid).catch((e) =>
+      console.warn("Deadline refresh failed:", e)
+    );
+  }, [currentUser?.uid]);
 
   const markAsRead = async (id: string) => {
     if (!currentUser) return;
@@ -82,171 +126,177 @@ export default function NotificationsPage() {
     return n.category === filter;
   });
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "deadline_alert":
-        return <Clock className="w-4 h-4 text-red-500" />;
-      case "new_opportunity":
-        return <Briefcase className="w-4 h-4 text-blue-500" />;
-      case "application_update":
-        return <Layers className="w-4 h-4 text-primary" />;
-      case "ai_suggestion":
-        return <Sparkles className="w-4 h-4 text-amber-500" />;
-      default:
-        return <Bell className="w-4 h-4 text-slate-500" />;
-    }
-  };
-
-  const getCategoryLabel = (category: string) => {
-    return category.replace("_", " ");
-  };
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   if (loading) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-secondary" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-foreground flex items-center gap-2">
-            <Bell className="w-6 h-6 text-primary" /> Notification Center
-          </h1>
-          <p className="text-foreground-muted text-sm mt-1">
-            Stay updated with deadline alerts, status updates, and personalized AI suggestions.
-          </p>
-        </div>
-
-        {notifications.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={markAllRead}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border hover:bg-surface-raised rounded-xl text-xs font-semibold text-foreground transition-all shadow-sm"
-            >
-              <CheckSquare className="w-3.5 h-3.5" /> Mark all read
-            </button>
-            <button
-              onClick={clearAll}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-red-500/30 hover:bg-red-500/10 rounded-xl text-xs font-semibold text-red-500 transition-all"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Clear all
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {[
-          { key: "all", label: "All Alerts" },
-          { key: "unread", label: "Unread" },
-          { key: "deadline_alert", label: "Deadlines" },
-          { key: "new_opportunity", label: "New Matches" },
-          { key: "application_update", label: "Updates" },
-          { key: "ai_suggestion", label: "AI Suggestions" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
-              filter === tab.key
-                ? "bg-primary border-primary text-white shadow-sm"
-                : "bg-surface border-border text-foreground hover:bg-surface-raised"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Notification items */}
-      <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm space-y-4">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            className={`p-4 rounded-2xl border transition-all flex items-start gap-4 ${
-              item.isRead
-                ? "bg-surface border-border opacity-75"
-                : "bg-gradient-to-r from-primary/5 to-surface border-primary/10 shadow-sm"
-            }`}
-          >
-            <div className={`p-2.5 rounded-xl ${item.isRead ? "bg-surface-raised" : "bg-primary/10"}`}>
-              {getCategoryIcon(item.category)}
-            </div>
-
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                  item.isRead ? "bg-surface-raised text-foreground-muted" : "bg-primary/15 text-primary"
-                }`}>
-                  {getCategoryLabel(item.category)}
-                </span>
-                <span className="text-[10px] text-foreground-muted font-medium">
-                  {new Date(item.createdAt).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-              <h4 className={`text-sm font-bold text-foreground ${!item.isRead ? "text-primary" : ""}`}>
-                {item.title}
-              </h4>
-              <p className="text-foreground-muted text-xs leading-relaxed">{item.message}</p>
-
-              {item.linkedRoute && (
-                <div className="pt-2">
-                  <Link
-                    href={item.linkedRoute}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-                  >
-                    View Details <ChevronRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1">
-              {!item.isRead && (
-                <button
-                  onClick={() => markAsRead(item.id)}
-                  className="p-1.5 rounded-full text-primary hover:bg-primary/10"
-                  title="Mark as read"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-              )}
-              <button
-                onClick={() => deleteNotification(item.id)}
-                className="p-1.5 rounded-full text-foreground-muted hover:text-red-500 hover:bg-surface-raised"
-                title="Delete alert"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        ))}
-
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 bg-surface-raised rounded-full flex items-center justify-center mx-auto mb-4">
-              <Inbox className="w-8 h-8 text-foreground-muted" />
-            </div>
-            <h3 className="font-bold text-foreground text-base">Inbox is empty</h3>
-            <p className="text-foreground-muted text-xs max-w-xs mx-auto mt-1">
-              {filter === "all"
-                ? "No alerts generated yet."
-                : `No alerts match the category: "${filter}".`}
+    <div className="mx-auto max-w-4xl space-y-8">
+      <Reveal>
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <span className="eyebrow text-secondary">Inbox</span>
+            <h1 className="mt-3 text-display-sm text-foreground">Notification Center</h1>
+            <p className="mt-2 text-sm text-foreground-muted">
+              Stay updated with deadline alerts, status updates, and personalized AI suggestions.
             </p>
           </div>
-        )}
-      </div>
+
+          {notifications.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="secondary" onClick={markAllRead}>
+                <CheckSquare className="h-3.5 w-3.5" />
+                Mark all read
+                {unreadCount > 0 && (
+                  <span className="ml-1 text-foreground-subtle">{unreadCount}</span>
+                )}
+              </Button>
+              <Button size="sm" variant="danger" onClick={clearAll}>
+                <Trash2 className="h-3.5 w-3.5" />
+                Clear all
+              </Button>
+            </div>
+          )}
+        </div>
+      </Reveal>
+
+      {/* Filter tabs */}
+      <Reveal delay={0.05}>
+        <div
+          role="tablist"
+          aria-label="Filter notifications"
+          className="scrollbar-none flex gap-2 overflow-x-auto pb-1"
+        >
+          {FILTERS.map((tab) => {
+            const isActive = filter === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setFilter(tab.key)}
+                className={`whitespace-nowrap rounded-full border px-4 py-1.5 text-xs font-medium transition-all duration-base ${
+                  isActive
+                    ? "border-transparent bg-surface-ink text-background"
+                    : "border-border bg-surface text-foreground-muted hover:bg-surface-raised hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </Reveal>
+
+      {/* Notification list */}
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={<Inbox className="h-5 w-5" />}
+          title="Inbox is empty"
+          description={
+            filter === "all"
+              ? "No alerts generated yet."
+              : `No alerts match the category: "${filter}".`
+          }
+        />
+      ) : (
+        <Stagger as="ul" className="space-y-3">
+          <AnimatePresence initial={false}>
+            {filtered.map((item) => {
+              const meta = CATEGORY_META[item.category] ?? {
+                icon: Bell,
+                tone: "neutral" as const,
+              };
+              const Icon = meta.icon;
+
+              return (
+                <StaggerItem as="li" key={item.id}>
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -12, transition: { duration: 0.18 } }}
+                    transition={{ duration: 0.4, ease: EASE }}
+                  >
+                    <Card
+                      className={`flex items-start gap-4 p-4 transition-opacity duration-base ${
+                        item.isRead ? "opacity-70" : "border-l-2 border-l-secondary"
+                      }`}
+                    >
+                      <span
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-border bg-surface-raised"
+                      >
+                        <Icon className="h-4 w-4 text-secondary" />
+                      </span>
+
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Chip tone={meta.tone}>{categoryLabel(item.category)}</Chip>
+                          <span className="text-xs font-medium text-foreground-subtle">
+                            {new Date(item.createdAt).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <h3
+                          className={`text-sm text-foreground ${
+                            item.isRead ? "font-medium" : "font-semibold"
+                          }`}
+                        >
+                          {item.title}
+                        </h3>
+                        <p className="text-xs leading-relaxed text-foreground-muted">{item.message}</p>
+
+                        {item.linkedRoute && (
+                          <Link
+                            href={item.linkedRoute}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-secondary transition-colors duration-base hover:text-secondary-hover"
+                          >
+                            View Details <ChevronRight className="h-3 w-3" />
+                          </Link>
+                        )}
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-1">
+                        {!item.isRead && (
+                          <button
+                            type="button"
+                            onClick={() => markAsRead(item.id)}
+                            title="Mark as read"
+                            aria-label={`Mark "${item.title}" as read`}
+                            className="grid h-7 w-7 place-items-center rounded-sm text-secondary transition-colors duration-fast hover:bg-accent-gold-surface hover:text-secondary-hover"
+                          >
+                            <Check className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => deleteNotification(item.id)}
+                          title="Delete alert"
+                          aria-label={`Delete alert "${item.title}"`}
+                          className="grid h-7 w-7 place-items-center rounded-sm text-foreground-subtle transition-colors duration-fast hover:bg-danger-surface hover:text-danger"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </Card>
+                  </motion.div>
+                </StaggerItem>
+              );
+            })}
+          </AnimatePresence>
+        </Stagger>
+      )}
     </div>
   );
 }

@@ -12,14 +12,9 @@ import { db } from "@/lib/firebase";
 import {
   doc,
   getDoc,
-  setDoc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-  collection,
-  addDoc,
-  increment
+  setDoc
 } from "firebase/firestore";
+import { trimSavedOpportunities } from "@/lib/savedOpportunities";
 import {
   Calendar,
   MapPin,
@@ -35,6 +30,7 @@ import {
   Check
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { seedOpportunityNotification } from "@/lib/automationEngine";
 
 /* ── Animation Variants ─────────────────────────────────────── */
 const pageVariants: Variants = {
@@ -68,7 +64,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const { id } = use(params);
   const { currentUser } = useAuth();
-  const { opportunities, loading: oppsLoading } = useOpportunities();
+  const { opportunities } = useOpportunities();
 
   const [opp, setOpp] = useState<Opportunity | null>(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -80,15 +76,18 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
 
   // Real view-count tracking. Runs exactly ONCE per opportunity id per page
   // visit — deliberately NOT dependent on `opportunities` (which comes from
-  // a live onSnapshot listener). Incrementing viewCount changes the very
-  // doc that listener watches, so depending on `opportunities` here would
-  // re-trigger this effect every time the increment lands, causing an
-  // infinite write loop. The ref guard makes this a true one-shot.
+  // a live onSnapshot listener). The ref guard makes this a true one-shot.
+  //
+  // This used to write straight to Firestore from the browser, which is why
+  // `org_opportunities` had to be world-writable in the rules. The increment is
+  // now an Admin-SDK server call so the collection can stay locked down.
   useEffect(() => {
     if (viewCountedRef.current === id) return;
     viewCountedRef.current = id;
-    updateDoc(doc(db, "org_opportunities", id), {
-      viewCount: increment(1),
+    fetch("/api/opportunities/view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
     }).catch((err) => console.warn("View count increment failed:", err));
   }, [id]);
 
@@ -128,14 +127,26 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
 
     try {
       const snap = await getDoc(docRef);
-      if (!snap.exists()) {
-        await setDoc(docRef, { opportunityIds: [id] });
-      } else {
-        await updateDoc(docRef, {
-          opportunityIds: isSaved ? arrayRemove(id) : arrayUnion(id),
-        });
+      const existing = snap.exists() ? snap.data() : { opportunityIds: [], items: [] };
+      const ids: string[] = Array.isArray(existing.opportunityIds) ? existing.opportunityIds : [];
+      const items: any[] = Array.isArray(existing.items) ? existing.items : [];
+      const nextIds = isSaved ? ids.filter((i) => i !== id) : [...ids.filter((i) => i !== id), id];
+      const nextItems = isSaved ? items.filter((it: any) => it?.id !== id) : items;
+      // Keep the saved section within its limit: drop the oldest entries.
+      const trimmed = trimSavedOpportunities(nextIds, nextItems);
+      await setDoc(docRef, { opportunityIds: trimmed.opportunityIds, items: trimmed.items });
+      const nowSaved = !isSaved;
+      setIsSaved(nowSaved);
+
+      // Fire save + deadline notifications when newly bookmarked
+      if (nowSaved && opp?.deadline && opp?.title) {
+        seedOpportunityNotification(
+          currentUser.uid,
+          opp.id,
+          opp.title,
+          opp.deadline
+        ).catch((e) => console.warn("Notification seed failed:", e));
       }
-      setIsSaved(!isSaved);
     } catch (error) {
       console.error("Bookmarking error:", error);
     }
@@ -266,7 +277,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
           {/* Main card */}
           <motion.div
             variants={cardVariants}
-            className="bg-surface border border-border shadow-xl dark:shadow-[0_8px_40px_rgba(255,60,110,0.08)] rounded-3xl overflow-hidden p-8 md:p-10 transition-colors duration-300"
+            className="bg-surface border border-border shadow-xl dark:shadow-[0_8px_40px_rgba(255,60,110,0.08)] rounded-lg dark:shadow-[0_8px_40px_rgba(255,60,110,0.08)] overflow-hidden p-8 md:p-10 transition-colors duration-300"
           >
             {/* Top Bar actions */}
             <motion.div
@@ -392,7 +403,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + i * 0.08, duration: 0.3 }}
                 >
-                  <span className="block text-[10px] uppercase font-bold text-foreground-muted tracking-wider mb-1">
+                  <span className="block text-2xs uppercase font-bold text-foreground-muted tracking-wider mb-1">
                     {label}
                   </span>
                   <span className="flex items-center gap-1 text-xs font-bold text-foreground">
@@ -451,7 +462,6 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
                     {opp.requiredDocuments.map((docName, i) => (
                       <motion.li
                         key={docName}
-                        custom={i}
                         variants={checklistItemVariants}
                         initial="hidden"
                         animate="show"
@@ -541,7 +551,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               transition={{ delay: 0.55, duration: 0.4 }}
             >
               <p className="text-xs text-foreground-muted max-w-sm text-center sm:text-left">
-                Ensure you have all required documents updated on your Bloom profile before applying.
+                Ensure you have all required documents updated on your NEXORA profile before applying.
               </p>
               <motion.a
                 href={opp.applyLink}

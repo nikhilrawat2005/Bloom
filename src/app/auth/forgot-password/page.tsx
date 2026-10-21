@@ -37,14 +37,14 @@ export default function ForgotPassword() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <Link href="/" className="flex items-center justify-center gap-2 text-2xl font-bold text-foreground mb-6">
-          <span className="p-1.5 bg-primary text-white rounded-lg shadow-sm">
+          <span className="p-1.5 bg-gradient-to-tr from-primary to-secondary text-white rounded-xl shadow-md shadow-primary/20">
             <Sparkles className="w-5 h-5" />
           </span>
-          <span>Bloom</span>
+          <span className="font-extrabold tracking-wider bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">NEXORA</span>
         </Link>
         <h2 className="text-center text-3xl font-extrabold text-foreground">Reset Password</h2>
         <p className="mt-2 text-center text-sm text-slate-500">
-          We'll send you an email with instructions to set a new password.
+          We&apos;ll send you an email with instructions to set a new password.
         </p>
       </div>
 
@@ -98,7 +98,7 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 bg-primary hover:bg-primary-hover text-white font-semibold text-sm py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full mt-2 bg-primary hover:bg-primary/25 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

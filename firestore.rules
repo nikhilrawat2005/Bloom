@@ -1,24 +1,28 @@
-// firestore.rules
-//
-// HOW TO DEPLOY THIS:
-// Option A (no CLI needed): Firebase Console → your project → Firestore
-// Database → Rules tab → paste this entire file → Publish.
-// Option B (CLI): `firebase deploy --only firestore:rules` (needs
-// firebase-tools installed + `firebase init firestore` run once).
-//
-// IMPORTANT: The admin email list below MUST be kept in sync with
-// src/lib/adminConfig.ts (ALLOWED_ADMIN_EMAILS). This is the layer that
-// actually matters for security — the UI checks in adminConfig.ts /
-// admin page are just UX, this is what actually stops someone editing
-// Firestore directly (e.g. via browser devtools) from making themselves
-// admin.
-
 rules_version = '2';
+
+// BLOOM Firestore security rules.
+//
+// Design rules of this file:
+//   1. Every document is owned by exactly one uid, taken from `request.auth.uid`
+//      (the verified token) -- never from the request body.
+//   2. Writes are allow-listed by field name. A user may set the fields their
+//      own feature needs and nothing else, so an injected field cannot ride
+//      along on an otherwise legitimate write.
+//   3. Identity fields (`uid`, `role`, `createdAt`) are immutable to the owner.
+//   4. Admin means: allow-listed email AND a *verified* email. Firebase issues
+//      ID tokens for unverified accounts, so the address check alone would let
+//      whoever registers the address first inherit admin.
+//   5. Anything the ingestion pipeline writes goes through the Admin SDK
+//      (service account), which bypasses these rules entirely.
+//
+// Admin addresses must stay in sync with `FALLBACK_ADMIN_EMAILS` in
+// `src/lib/serverAuth.ts`. They are not secrets: the boundary is the verified
+// token claim, not the obscurity of the list.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Helpers ──────────────────────────────────────────────────────────
+    // ───────────────────────────── helpers ─────────────────────────────
 
     function isSignedIn() {
       return request.auth != null;
@@ -28,185 +32,387 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    // Keep this list identical to ALLOWED_ADMIN_EMAILS in
-    // src/lib/adminConfig.ts.
-    function isAdminEmail() {
-      return isSignedIn() && request.auth.token.email in [
-        "bhatt.yogesh0814@gmail.com",
-        "ypranjalt@gmail.com",
-        "nikhil2005114@gmail.com"
-      ];
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          "nikhil2005114@gmail.com",
+          "bhatt.yogesh0814@gmail.com",
+          "ypranjalt@gmail.com",
+          "teamcipher.work@gmail.com",
+          "priyanshusrivastav850@gmail.com",
+          "deepikanshp@gmail.com"
+        ];
     }
 
-    // ── Users ────────────────────────────────────────────────────────────
-    // Anyone signed in can read their own profile. Admins can read any
-    // profile (needed for the admin panel's user list).
-    // On write: a user can update their own doc, but can NEVER change their
-    // own `role` field unless they're on the hardcoded admin allowlist.
-    // Only allowlisted admins can change ANYONE's role (via the admin panel).
+    /** Bounded free-text: a string, not absurdly long. */
+    function isText(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    /** App timestamps are ISO-8601 strings, not Firestore timestamps. */
+    function isIsoDate(v) {
+      return v is string && v.size() <= 40;
+    }
+
+    /**
+     * A list with a sane ceiling.
+     *
+     * The rules `List` type exposes only hasAll/hasAny/hasOnly/removeAll/size --
+     * there is no per-element predicate -- so element types cannot be checked
+     * here. Bounding the size is what actually prevents the abuse this guards
+     * against (an unbounded array in a user-owned document).
+     */
+    function isBoundedList(v, maxItems) {
+      return v is list && v.size() <= maxItems;
+    }
+
+    function isCount(v, max) {
+      return v is number && v >= 0 && v <= max;
+    }
+
+    /** Keys are a subset of the supplied list (partial update / merge). */
+    function subsetOfKeys(data, keys) {
+      return data.keys().hasOnly(keys);
+    }
+
+    // ───────────────────────────── users ─────────────────────────────
+    //
+    // `role` is assigned server-side only (POST /api/admin/resolve-role). The
+    // owner may create their own document with role "user" and may never change
+    // it afterwards -- the previous rule allowed an owner to write `role` as
+    // long as it equalled the stored value, which permitted creating the
+    // document with an elevated role in the same request.
 
     match /users/{uid} {
-      allow read: if isOwner(uid) || isAdminEmail();
-      allow create: if isOwner(uid) &&
-        (request.resource.data.role == "user" || isAdminEmail());
-      allow update: if isAdminEmail() ||
-        (isOwner(uid) &&
-          request.resource.data.role == resource.data.role);
-      allow delete: if isAdminEmail();
+      allow read: if isOwner(uid) || isAdmin();
+
+      allow create: if isOwner(uid)
+        && isText(request.resource.data.username, 64)
+        && isText(request.resource.data.name, 120)
+        && isText(request.resource.data.email, 200)
+        && request.resource.data.role == "user"
+        && isIsoDate(request.resource.data.createdAt)
+        && subsetOfKeys(request.resource.data, [
+             "username", "name", "email", "role", "authProvider",
+             "bio", "education", "skills", "interests", "location",
+             "category", "categories", "income", "createdAt", "updatedAt",
+             "performanceScore", "performanceBand", "performanceCoverage", "performanceDocCount",
+             "studentLevel", "studentLevelDescription", "performanceUpdatedAt"
+           ]);
+
+      allow update: if isAdmin()
+        || (isOwner(uid)
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.email == resource.data.email
+            && subsetOfKeys(request.resource.data, [
+                 "username", "name", "email", "role", "authProvider",
+                 "bio", "education", "skills", "interests", "location",
+                 "category", "categories", "income", "createdAt", "updatedAt",
+                 "performanceScore", "performanceBand", "performanceCoverage", "performanceDocCount",
+                 "studentLevel", "studentLevelDescription", "performanceUpdatedAt"
+               ]));
+
+      allow delete: if isAdmin();
     }
 
-    // ── Opportunities (organization-posted + automated ingestion) ────────
-    // Public read of approved listings (explore page). Owners can read
-    // their own pending/rejected listings. Admins can read everything.
-    // Only admins (or the automated-ingestion cron, which uses the Admin
-    // SDK and bypasses rules entirely) can change `status`. Organization
-    // owners can create their own listings (always starting as "pending")
-    // and edit their own non-status fields.
+    // ───────────────────────── usernames ─────────────────────────
+    //
+    // `loginWithIdentifier` reads usernames/{key}.email and then authenticates
+    // with that address, so the `email` field is security-relevant: it must be
+    // the caller's own verified token email. The old rule allowed any string
+    // there, and `allow update, delete: if false` meant a claimed name could
+    // never be released, so names were permanently squat-able.
+    //
+    // The document id must equal the normalized username so the login lookup
+    // cannot be desynchronised from the profile.
 
+    match /usernames/{username} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.username == username
+        && request.resource.data.email == request.auth.token.email
+        && isIsoDate(request.resource.data.createdAt);
+
+      allow update: if false;
+
+      // A user may release a name they hold, so a username change does not
+      // strand the old one forever.
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+// ──────────────────────── org_opportunities ────────────────────────
+    //
+    // Organization-submitted listings are untrusted user content: they are
+    // created as "pending" and only an admin can approve, edit or remove them.
+    // Read access is now restricted to signed-in users (the ingestion sync
+    // uses the Admin SDK and view counting is via POST /api/opportunities/view).
+    //
     match /org_opportunities/{oppId} {
-      allow read: if resource.data.status == "approved" ||
-        isAdminEmail() ||
-        (isSignedIn() && resource.data.postedByUid == request.auth.uid);
+      allow read: if isSignedIn();
 
-      allow create: if isSignedIn() &&
-        request.resource.data.postedByUid == request.auth.uid &&
-        request.resource.data.status == "pending";
+      allow create: if isSignedIn()
+        && request.resource.data.postedByUid == request.auth.uid
+        && request.resource.data.status == "pending"
+        && request.resource.data.source == "organization"
+        && isText(request.resource.data.title, 200)
+        && isText(request.resource.data.description, 8000)
+        && isText(request.resource.data.orgName, 200)
+        && isText(request.resource.data.applyLink, 2000)
+        && isIsoDate(request.resource.data.createdAt);
 
-      allow update: if isAdminEmail() ||
-        (isSignedIn() &&
-          resource.data.postedByUid == request.auth.uid &&
-          request.resource.data.status == resource.data.status) ||
-        // Any signed-in visitor may bump the view counter on an approved
-        // listing — every other field (including status) must stay
-        // untouched by this path.
-        (isSignedIn() &&
-          resource.data.status == "approved" &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["viewCount"]));
-
-      allow delete: if isAdminEmail() ||
-        (isSignedIn() && resource.data.postedByUid == request.auth.uid);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
-    // ── Organization access requests (self-service signup flow) ──────────
-    // Doc ID == uid, one request per user. A user can create their own
-    // request (must start "pending"), and resubmit only after a rejection.
-    // Only admins can approve/reject (which also requires them to update
-    // the matching users/{uid}.role separately — see the /users rule above,
-    // which already allows isAdminEmail() to change anyone's role).
+    // ──────────────────────── opportunities ────────────────────────
+    // Curated, admin-managed feed. No client writes at all.
+
+    match /opportunities/{oppId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ───────────────────────── org_requests ─────────────────────────
 
     match /org_requests/{uid} {
-      allow read: if isOwner(uid) || isAdminEmail();
-      allow create: if isOwner(uid) &&
-        request.resource.data.uid == uid &&
-        request.resource.data.status == "pending";
-      allow update: if isAdminEmail() ||
-        (isOwner(uid) &&
-          resource.data.status == "rejected" &&
-          request.resource.data.status == "pending");
-      allow delete: if isAdminEmail();
+      allow read: if isOwner(uid) || isAdmin();
+
+      allow create: if isOwner(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.status == "pending"
+        && isText(request.resource.data.orgName, 200)
+        && isText(request.resource.data.description, 4000);
+
+      // A rejected applicant may re-apply; nothing else may change.
+      allow update: if isAdmin()
+        || (isOwner(uid)
+            && resource.data.status == "rejected"
+            && request.resource.data.status == "pending"
+            && request.resource.data.uid == uid);
+
+      allow delete: if isAdmin();
     }
 
-    // ── Ingestion logs (written only by the server via Admin SDK) ────────
+    // ────────────────────── server-managed logs ──────────────────────
+
     match /ingestion_logs/{logId} {
-      allow read: if isAdminEmail();
-      allow write: if false; // Admin SDK (cron route) bypasses rules anyway
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
-    // ── Bookmarks (doc ID == uid, single doc per user holding an array) ──
+    // Legacy collection, counted on the admin dashboard. Read-only, admin only.
+    match /community_posts/{postId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ─────────────────────────── bookmarks ───────────────────────────
+
     match /bookmarks/{uid} {
+      allow read: if isOwner(uid);
+      // `items` holds full opportunity snapshots for offline rendering.
+      allow create, update: if isOwner(uid)
+        && isBoundedList(request.resource.data.opportunityIds, 2000)
+        && subsetOfKeys(request.resource.data, ["opportunityIds", "items"]);
+      allow delete: if isOwner(uid);
+    }
+
+    // ───────────────── user subcollections (owner-only) ─────────────────
+    //
+    // `users/{uid}/tracker/performance` is written by the Admin SDK from
+    // /api/wallet/performance-profile, which bypasses these rules; the read
+    // rule is kept for any future client-side viewer.
+
+    match /users/{uid}/tracker/{trackerId} {
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid);
+    }
+
+    match /users/{uid}/wallet/{docId} {
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid);
+    }
+
+    match /users/{uid}/profileLinks/{linkId} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && isText(request.resource.data.url, 500)
+        && isText(request.resource.data.kind, 40)
+        && (!("origin" in request.resource.data) || isText(request.resource.data.origin, 20))
+        && (!("label" in request.resource.data) || isText(request.resource.data.label, 100));
+      allow delete: if isOwner(uid);
+    }
+
+    match /users/{uid}/saved/{itemId} {
       allow read, write: if isOwner(uid);
     }
 
-    // ── Owner-only collections: wallet, applications (tracker), ──────────
-    // ── calendar_events, reminders — all keyed by a `uid` field ──────────
+    // ─────────────────────────── chat_history ───────────────────────────
+
+    match /chat_history/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && subsetOfKeys(request.resource.data, ["messages"])
+        && request.resource.data.messages is list
+        && request.resource.data.messages.size() <= 500;
+      allow delete: if isOwner(uid);
+    }
+
+    // ────────────────────────── notifications ──────────────────────────
+    //
+    // `notifications/{uid}/items` is the live collection (written by
+    // src/lib/automationEngine.ts, marked read on the notifications page).
+
+    match /notifications/{uid}/items/{itemId} {
+      allow read: if isOwner(uid);
+
+      allow create: if isOwner(uid)
+        && request.resource.data.uid == uid
+        && isText(request.resource.data.title, 300)
+        && isText(request.resource.data.message, 4000)
+        && request.resource.data.isRead == false
+        && isIsoDate(request.resource.data.createdAt);
+
+      // Only the read flag may flip.
+      allow update: if isOwner(uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["isRead"]);
+
+      allow delete: if isOwner(uid);
+    }
+
+    // Legacy per-user notification collection.
+    // `allow create: if isSignedIn()` let ANY signed-in user write a
+    // notification into ANYONE ELSE'S inbox (`users/{victim}/notifications/...`),
+    // which is both spam and a spoofing vector. Creation is now owner-or-admin.
+    match /users/{uid}/notifications/{notifId} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) || isAdmin();
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+    // ──────────────────── owner-scoped user documents ────────────────────
+    //
+    // Shared shape: the applicant/owner sets `uid` at create time, it must equal
+    // the token uid, and it is immutable afterwards. `org_opportunities` status
+    // changes are admin-only; organization shortlisting of an application now
+    // happens server-side via POST /api/organization/applications/status.
 
     match /wallet/{docId} {
-      allow read, delete: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow read: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid)
+        && isText(request.resource.data.name, 300)
+        && isIsoDate(request.resource.data.uploadedAt)
+        && isCount(request.resource.data.sizeBytes, 104857600);
+      allow update: if isOwner(resource.data.uid)
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(resource.data.uid) || isAdmin();
     }
 
     match /applications/{docId} {
-      allow read, delete: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow read: if isOwner(resource.data.uid) || isAdmin();
+      allow create: if isOwner(request.resource.data.uid)
+        && isIsoDate(request.resource.data.createdAt);
+      allow update: if isOwner(resource.data.uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(["status", "interviewDate", "notes", "updatedAt", "applyLink"]);
+      allow delete: if isOwner(resource.data.uid) || isAdmin();
     }
 
     match /calendar_events/{docId} {
-      allow read, delete: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow read: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid)
+        && isText(request.resource.data.title, 300)
+        && isIsoDate(request.resource.data.createdAt);
+      allow update: if isOwner(resource.data.uid)
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(resource.data.uid);
     }
 
     match /reminders/{docId} {
-      allow read, delete: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.uid == request.auth.uid;
-    }
-
-    match /eligibility_checks/{docId} {
-      allow read, delete: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow read: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid)
+        && isText(request.resource.data.opportunityTitle, 300)
+        && isIsoDate(request.resource.data.createdAt);
+      allow update: if isOwner(resource.data.uid)
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(resource.data.uid);
     }
 
     match /resume_analyses/{docId} {
-      allow read, delete: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow read: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid)
+        && isIsoDate(request.resource.data.timestamp);
+      allow update: if isOwner(resource.data.uid)
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(resource.data.uid);
+    }
+
+    // Full-person performance assessments (wallet + saved items -> AI profile).
+    match /performance_analyses/{docId} {
+      allow read: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid)
+        && isIsoDate(request.resource.data.createdAt)
+        && subsetOfKeys(request.resource.data, [
+             "uid", "createdAt", "overallScore", "profileTitle", "assessment", "facts"
+           ]);
+      allow update: if isOwner(resource.data.uid)
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(resource.data.uid);
+    }
+
+    // Saved-opportunity matcher results (plus points / gaps per saved item),
+    // one doc per run so previous analyses stay viewable. Written by the client
+    // after POST /api/opportunities/match.
+    match /opportunity_matches/{docId} {
+      allow read: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid)
+        && isIsoDate(request.resource.data.createdAt)
+        && subsetOfKeys(request.resource.data, ["uid", "createdAt", "updatedAt", "matches"]);
+      allow update: if isOwner(resource.data.uid)
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(resource.data.uid);
+    }
+
+    // Enriched profile links (GitHub repos + coding-platform stats), one doc per
+    // uid, written by the client after POST /api/profile/enrich.
+    match /profile_enrichment/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && subsetOfKeys(request.resource.data, ["github", "githubError", "coding", "updatedAt"])
+        && isIsoDate(request.resource.data.updatedAt);
+      allow delete: if isOwner(uid);
     }
 
     match /interviews/{docId} {
-      allow read, delete: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow read: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid)
+        && isIsoDate(request.resource.data.timestamp);
+      allow update: if isOwner(resource.data.uid)
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(resource.data.uid);
     }
 
-    // ── AI Hub: roadmap + chat history (doc ID == uid, single doc each) ──
-    match /roadmaps/{uid} {
+    // AI Career Roadmap progress tracking (docId format: `${uid}_${roleId}`)
+    match /roadmap_progress/{docId} {
+      allow read: if isSignedIn() && docId.matches('^' + request.auth.uid + '_.*');
+      allow create, update: if isSignedIn() && docId.matches('^' + request.auth.uid + '_.*');
+      allow delete: if isSignedIn() && docId.matches('^' + request.auth.uid + '_.*');
+    }
+
+    // AI Mock Interview history (one doc per uid)
+    match /interview_history/{uid} {
       allow read, write: if isOwner(uid);
     }
 
-    match /chat_history/{uid} {
-      allow read, write: if isOwner(uid);
-    }
+    // ─────────────────────────── default deny ───────────────────────────
 
-    // Per-user notification subcollection: notifications/{uid}/items/{id}
-    match /notifications/{uid}/items/{itemId} {
-      allow read, write: if isOwner(uid);
-    }
-
-    // ── Community (forum posts, replies, mentorship requests) ────────────
-    // Readable by any signed-in user. Creation requires you to be the
-    // stated author. Updates are allowed by any signed-in user because
-    // likes/replyCount are incremented by other users, not just the author
-    // — but only the author (or an admin) can delete.
-
-    match /community_posts/{postId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
-      allow update: if isSignedIn();
-      allow delete: if isAdminEmail() ||
-        (isSignedIn() && resource.data.authorUid == request.auth.uid);
-    }
-
-    match /community_replies/{replyId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
-      allow update: if isSignedIn();
-      allow delete: if isAdminEmail() ||
-        (isSignedIn() && resource.data.authorUid == request.auth.uid);
-    }
-
-    match /mentorship_requests/{reqId} {
-      allow read: if isAdminEmail() ||
-        (isSignedIn() && resource.data.uid == request.auth.uid);
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAdminEmail() ||
-        (isSignedIn() && resource.data.uid == request.auth.uid);
-    }
-
-    // Default: deny everything not explicitly matched above.
     match /{document=**} {
       allow read, write: if false;
     }
