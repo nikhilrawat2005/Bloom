@@ -20,40 +20,63 @@ import {
   FlaskConical,
   BookOpen,
   Globe2,
+  Zap,
+  CheckCircle2,
+  TrendingUp,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-const EASE = [0.22, 1, 0.36, 1] as const;
+const EASE = [0.16, 1, 0.3, 1] as const;
 
-const FACETS = ["Computer Science", "Engineering", "Data & AI", "Design", "Business", "Sciences"];
+const FACETS = [
+  "Artificial Intelligence",
+  "Computer Science",
+  "Biotech & STEM",
+  "Design & Product",
+  "Data Science",
+  "FinTech",
+];
 
 const CATEGORIES = [
-  { name: "Scholarships", icon: GraduationCap, note: "Girls • Gov • Merit" },
-  { name: "Fellowships", icon: Users, note: "Research • 12 mo" },
-  { name: "Internships", icon: Briefcase, note: "Remote • Stipend" },
-  { name: "Conferences", icon: Compass, note: "CFP • Virtual" },
-  { name: "Hackathons", icon: Trophy, note: "Offline • Free" },
-  { name: "Research", icon: FlaskConical, note: "Labs • Grants" },
-  { name: "Workshops", icon: BookOpen, note: "Bootcamps • Skills" },
-  { name: "Exchange Programs", icon: Globe2, note: "Global • Abroad" },
+  { name: "Scholarships", icon: GraduationCap, note: "Merit • Gov • Undergrad", color: "from-blue-500/20 to-indigo-500/20" },
+  { name: "Fellowships", icon: Users, note: "Global Research • 12mo+", color: "from-purple-500/20 to-pink-500/20" },
+  { name: "Internships", icon: Briefcase, note: "High-Growth • Paid", color: "from-emerald-500/20 to-teal-500/20" },
+  { name: "Hackathons", icon: Trophy, note: "Offline & Global • Prizes", color: "from-amber-500/20 to-orange-500/20" },
+  { name: "Conferences", icon: Compass, note: "Virtual & In-Person • CFP", color: "from-cyan-500/20 to-blue-500/20" },
+  { name: "Research", icon: FlaskConical, note: "Labs • Grants • Papers", color: "from-violet-500/20 to-purple-500/20" },
+  { name: "Workshops", icon: BookOpen, note: "Hands-on • Masterclasses", color: "from-rose-500/20 to-red-500/20" },
+  { name: "Exchange Programs", icon: Globe2, note: "Semester Abroad • Immersive", color: "from-sky-500/20 to-indigo-500/20" },
 ];
 
-const PILLARS = [
-  { t: "One calm ledger", d: "400 sources distilled into one scroll, no scattered blogs." },
-  { t: "Smart, honest filters", d: "Each category owns its filters — not generic everywhere." },
-  { t: "Expiry as feature", d: "Pending stays, expired auto-prunes every 12 hours." },
+const STATS = [
+  { label: "Active Opportunities", val: "400+" },
+  { label: "AI Career Roadmaps", val: "14 Paths" },
+  { label: "Expiry Auto-Sweep", val: "Every 12h" },
+  { label: "Verified Sponsors", val: "100%" },
 ];
 
-const VOICES = [
-  { q: "NEXORA replaced 12 tabs with one ledger. I found WISE-KIRAN in two minutes.", n: "Arjun Verma", r: "CS & AI, IIT Delhi" },
-  { q: "Expiry sweep is honest — if it’s closed, it’s gone. No ghost listings.", n: "Sneha Nair", r: "SE, BITS Pilani" },
-  { q: "AI summary turns a messy CFP page into 6 clear facts. Huge time saver.", n: "Karan Mehta", r: "Robotics, DTU" },
+const FEATURES = [
+  {
+    title: "AI Precision Matching",
+    desc: "Bloom analyses your profile, education, and interests to highlight high-probability matches with instant gap analysis.",
+    icon: Sparkles,
+  },
+  {
+    title: "Interactive Career Roadmaps",
+    desc: "14 full-stack, AI, cloud, and engineering career roadmaps with profile synchronization and progress tracking.",
+    icon: TrendingUp,
+  },
+  {
+    title: "Document & Resume Wallet",
+    desc: "Store your credentials in private Cloudinary storage with one-click automatic qualification checks.",
+    icon: CheckCircle2,
+  },
 ];
 
-const TONIGHT = [
-  { k: "Hackathon", t: "Smart India Hackathon 2026 — Finals", m: "Offline • Free • Prize ₹10L", c: "Hackathons" },
-  { k: "Fellowship", t: "WISE-KIRAN Research Mobility", m: "Gov • Girls • 12 months", c: "Fellowships" },
-  { k: "Internship", t: "Remote ML Intern — Eduversity", m: "Remote • Paid • 3 mo", c: "Internships" },
+const CURATED_PICKS = [
+  { k: "Hackathon", t: "Smart India Hackathon 2026 — Finals", m: "Free Entry • ₹10,00,000 Prize Pool", tag: "Hackathons" },
+  { k: "Fellowship", t: "WISE-KIRAN Research Mobility", m: "Government Funded • 12 Months Research", tag: "Fellowships" },
+  { k: "Internship", t: "Machine Learning Research Intern", m: "Remote • Competitive Stipend", tag: "Internships" },
 ];
 
 export default function Home() {
@@ -71,238 +94,225 @@ export default function Home() {
       <Navbar />
 
       <main className="flex-grow">
-        {/* ── Masthead ─────────────────────────────────────────────── */}
-        <section className="shell pb-12 pt-8 sm:pt-10">
-          <div className="flex items-center justify-between border-y border-border py-2.5 text-2xs font-semibold tracking-[0.14em] text-foreground-muted">
-            <span className="hidden sm:inline">EST. 2026 — CURATED BY NEXORA EDITORS</span>
-            <span>VOL. I — ATLAS OF OPPORTUNITY</span>
-            <span className="hidden items-center gap-2 sm:inline">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" /> 400 LIVE LISTINGS
-            </span>
-          </div>
+        {/* Hero Section */}
+        <section className="relative overflow-hidden pt-12 pb-20 sm:pt-16 sm:pb-28">
+          {/* Subtle background ambient mesh */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] pointer-events-none -z-10 bloom-glow opacity-60" />
 
-          <div className="grid items-start gap-8 pt-8 sm:pt-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12">
-            <div>
+          <div className="shell">
+            <div className="mx-auto max-w-4xl text-center">
+              {/* Badge */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: EASE }}
-                className="inline-flex items-center gap-2 rounded-full border border-accent-gold-surface bg-accent-gold-surface px-3 py-1.5 text-2xs font-semibold tracking-[0.14em] text-secondary"
+                transition={{ duration: 0.4, ease: EASE }}
+                className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-bold text-primary shadow-sm"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-secondary" /> DISCOVER • PREPARE • GROW
+                <Zap className="h-3.5 w-3.5 fill-primary" />
+                <span>BLOOM INTELLIGENCE PLATFORM 2026</span>
               </motion.div>
 
+              {/* Main Heading */}
               <motion.h1
-                initial={{ opacity: 0, y: 14 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.08, ease: EASE }}
-                className="mt-5 font-display text-display font-bold tracking-[-0.04em] text-balance"
+                transition={{ duration: 0.5, delay: 0.08, ease: EASE }}
+                className="mt-6 font-display text-display font-extrabold tracking-tight text-foreground"
               >
-                Every student
-                <br />
-                <span className="font-light italic tracking-[-0.03em] text-foreground/85">
-                  opportunity.
+                Where Ambition Meets{" "}
+                <span className="bg-gradient-to-r from-primary via-indigo-500 to-secondary bg-clip-text text-transparent">
+                  Unfair Advantage.
                 </span>
-                <br />
-                One{" "}
-                <span className="underline decoration-[3px] decoration-secondary underline-offset-[10px]">
-                  intelligent
-                </span>
-                <br />
-                atlas.
               </motion.h1>
 
+              {/* Subheading */}
               <motion.p
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.16, duration: 0.5, ease: EASE }}
-                className="mt-6 max-w-[560px] text-base leading-relaxed text-foreground-muted text-pretty"
+                transition={{ duration: 0.5, delay: 0.16, ease: EASE }}
+                className="mx-auto mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-foreground-muted"
               >
-                NEXORA is a parchment-calm, ink-precise atlas of scholarships, fellowships,
-                internships and hackathons — scraped from 400 sources, summarized by AI, filtered
-                with intent.
+                Bloom cuts through internet clutter to connect ambitious students with top-tier scholarships,
+                fellowships, high-growth internships, and AI-powered career roadmaps.
               </motion.p>
 
-              {/* Search — an editorial inset rather than a pill */}
+              {/* Interactive Search Bar */}
               <motion.form
                 onSubmit={onSearch}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.22, ease: EASE }}
-                className="mt-7 flex max-w-[560px] items-center gap-2 rounded-lg border border-border bg-surface p-1.5 shadow-e1 transition-[border-color,box-shadow] duration-base focus-within:border-foreground focus-within:shadow-e3"
+                transition={{ duration: 0.5, delay: 0.22, ease: EASE }}
+                className="mx-auto mt-9 flex max-w-2xl items-center gap-2 rounded-2xl border border-border bg-surface p-2 shadow-e3 transition-all focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3 pl-4">
-                  <Search className="h-[18px] w-[18px] shrink-0 text-foreground-muted" />
+                  <Search className="h-5 w-5 shrink-0 text-foreground-muted" />
                   <input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Try “Girls Go Circular, DAAD, or remote ML intern”"
-                    aria-label="Search opportunities"
-                    className="w-full bg-transparent py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-subtle"
+                    placeholder="Search scholarships, AI fellowships, internships, hackathons..."
+                    className="w-full bg-transparent py-2.5 text-sm font-medium text-foreground outline-none placeholder:text-foreground-subtle"
                   />
                 </div>
-                <button type="submit" className="btn btn-primary shrink-0">
-                  Explore <ArrowUpRight className="h-4 w-4" />
+                <button type="submit" className="btn btn-primary btn-md shrink-0">
+                  Search Atlas <ArrowUpRight className="h-4 w-4" />
                 </button>
               </motion.form>
 
-              <div className="mt-4 flex max-w-[560px] flex-wrap gap-2">
+              {/* Quick Filter Tags */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mt-4 flex flex-wrap justify-center gap-2"
+              >
+                <span className="text-xs font-semibold text-foreground-muted self-center mr-1">Trending:</span>
                 {FACETS.map((f) => (
                   <button
                     key={f}
-                    type="button"
                     onClick={() => router.push(`/explore?search=${encodeURIComponent(f)}`)}
-                    className="chip transition-colors duration-fast hover:border-foreground-subtle hover:bg-surface"
+                    className="rounded-lg border border-border bg-surface-raised px-2.5 py-1 text-xs font-medium text-foreground-muted transition-colors hover:border-primary/50 hover:text-primary"
                   >
                     {f}
                   </button>
                 ))}
-              </div>
+              </motion.div>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.34 }}
+                className="mt-8 flex flex-wrap items-center justify-center gap-4"
+              >
                 <Link
                   href={currentUser ? "/dashboard" : "/auth/signup"}
                   className="btn btn-primary btn-lg"
                 >
-                  {currentUser ? "Open dashboard" : "Start free — no clutter"}
+                  {currentUser ? "Open Bloom Dashboard" : "Get Started Free"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link href="/ai-hub" className="btn btn-ghost btn-lg">
-                  <Sparkles className="h-4 w-4 text-secondary" /> Try AI Career Hub
+                <Link href="/ai-hub" className="btn btn-secondary btn-lg">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Explore AI Career Hub
                 </Link>
-              </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
 
-              <p className="mt-3 text-xs tracking-[0.04em] text-foreground-subtle">
-                No spam. No purple gradients. Just verified pathways.
+        {/* Stats Strip */}
+        <section className="border-y border-border bg-surface py-8">
+          <div className="shell">
+            <div className="grid grid-cols-2 gap-6 md:grid-cols-4 text-center">
+              {STATS.map((s) => (
+                <div key={s.label}>
+                  <div className="font-display text-2xl sm:text-3xl font-extrabold text-foreground">
+                    {s.val}
+                  </div>
+                  <div className="mt-1 text-xs sm:text-sm font-medium text-foreground-muted">
+                    {s.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Category Exploration Grid */}
+        <section className="shell py-16 sm:py-20">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+            <div>
+              <span className="eyebrow text-secondary">CURATED SECTORS</span>
+              <h2 className="mt-1 font-display text-display-sm font-bold text-foreground">
+                Explore by Track
+              </h2>
+            </div>
+            <Link href="/explore" className="btn btn-ghost btn-sm text-primary font-semibold self-start sm:self-auto">
+              View all tracks <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-4">
+            {CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <Link
+                  key={cat.name}
+                  href={`/explore?category=${cat.name}`}
+                  className="card group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-e2"
+                >
+                  <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl ${cat.color} rounded-bl-full pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity`} />
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-surface-raised text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-200">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 font-display text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                    {cat.name}
+                  </h3>
+                  <p className="mt-1 text-xs text-foreground-muted">{cat.note}</p>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Features / Why Bloom */}
+        <section className="bg-surface border-y border-border py-16 sm:py-20">
+          <div className="shell">
+            <div className="max-w-2xl mb-12">
+              <span className="eyebrow text-primary">INTELLIGENT WORKFLOW</span>
+              <h2 className="mt-1 font-display text-display-sm font-bold text-foreground">
+                Designed for Signal, Not Noise
+              </h2>
+              <p className="mt-3 text-sm text-foreground-muted">
+                Bloom bridges discovery and execution. Every application, timeline, and prerequisite is verified.
               </p>
             </div>
 
-            {/* Artifact stack — deliberately off-centre */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.18, duration: 0.6, ease: EASE }}
-              className="relative lg:sticky lg:top-[84px]"
-            >
-              <div className="card overflow-hidden !p-0">
-                <div className="h-1.5 w-full bg-gradient-to-r from-foreground via-secondary to-foreground/40" />
-                <div className="p-5 sm:p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="eyebrow">Tonight’s curation</span>
-                    <span className="chip chip-success">● LIVE</span>
-                  </div>
-
-                  <Stagger className="mt-4 space-y-3" amount={0.4}>
-                    {TONIGHT.map((it) => (
-                      <StaggerItem key={it.t}>
-                        <div className="flex gap-3 rounded-md border border-border bg-surface-raised/60 p-3.5 transition-colors duration-fast hover:bg-surface-raised">
-                          <span
-                            aria-hidden
-                            className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-foreground text-2xs font-bold tracking-[0.06em] text-background"
-                          >
-                            {it.k[0]}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-semibold leading-snug tracking-[-0.01em]">
-                              {it.t}
-                            </div>
-                            <div className="mt-0.5 text-xs text-foreground-muted">{it.m}</div>
-                            <span className="mt-2 inline-flex border border-border bg-surface px-2 py-1 text-2xs font-semibold tracking-[0.08em] text-foreground-muted">
-                              {it.c}
-                            </span>
-                          </div>
-                        </div>
-                      </StaggerItem>
-                    ))}
-                  </Stagger>
-
-                  <Link href="/explore" className="btn btn-primary btn-lg mt-4 w-full justify-center">
-                    Open full atlas <ArrowUpRight className="h-4 w-4" />
-                  </Link>
-                  <p className="mt-3 text-center text-xs text-foreground-subtle">
-                    Scrape cadence: every 2 days • Expiry sweep: every 12h
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-
-          <hr className="hr-brass mt-12" />
-        </section>
-
-        {/* ── Index ─────────────────────────────────────────────────── */}
-        <section className="shell py-12">
-          <Reveal className="flex flex-wrap items-end justify-between gap-6">
-            <h2 className="font-display text-display-sm font-bold tracking-[-0.03em]">Index</h2>
-            <p className="max-w-[520px] text-sm text-foreground-muted text-pretty">
-              Six ledgers, each with its own filters — paid/unpaid, online/offline, gov/private,
-              girls/boys — not one generic dropdown.
-            </p>
-          </Reveal>
-
-          <Stagger className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 lg:grid-cols-4">
-            {CATEGORIES.map((cat) => {
-              const I = cat.icon;
-              return (
-                <StaggerItem key={cat.name}>
-                  <Link
-                    href={`/explore?category=${cat.name}`}
-                    className="card group block p-4 transition-[border-color,box-shadow,transform] duration-base hover:-translate-y-0.5 hover:border-foreground-subtle hover:shadow-e2"
-                  >
-                    <span className="grid h-9 w-9 place-items-center rounded-md border border-border bg-surface-raised transition-colors duration-base group-hover:border-foreground group-hover:bg-foreground group-hover:text-background">
-                      <I className="h-4 w-4" />
-                    </span>
-                    <span className="mt-3 block text-sm font-semibold tracking-[-0.01em]">
-                      {cat.name}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-foreground-muted">{cat.note}</span>
-                  </Link>
-                </StaggerItem>
-              );
-            })}
-          </Stagger>
-        </section>
-
-        {/* ── Why ───────────────────────────────────────────────────── */}
-        <section className="border-y border-border bg-surface">
-          <div className="shell py-12 sm:py-14">
-            <div className="grid items-start gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-              <Reveal as="h2" className="font-display text-display-sm font-bold tracking-[-0.03em]">
-                Built for signal,
-                <br />
-                <span className="font-normal italic">not noise.</span>
-              </Reveal>
-
-              <Stagger className="grid gap-4 sm:grid-cols-3">
-                {PILLARS.map((b) => (
-                  <StaggerItem key={b.t}>
-                    <div className="card-inset h-full p-4">
-                      <span className="block h-1 w-7 rounded-full bg-secondary" />
-                      <div className="mt-3 text-sm font-semibold tracking-[-0.01em]">{b.t}</div>
-                      <p className="mt-1 text-sm leading-relaxed text-foreground-muted text-pretty">
-                        {b.d}
-                      </p>
+            <div className="grid gap-6 md:grid-cols-3">
+              {FEATURES.map((f) => {
+                const Icon = f.icon;
+                return (
+                  <div key={f.title} className="card p-6 bg-surface-raised/50 border border-border hover:border-primary/40 transition-all">
+                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
                     </div>
-                  </StaggerItem>
-                ))}
-              </Stagger>
+                    <h3 className="mt-4 font-display text-lg font-bold text-foreground">{f.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-foreground-muted">{f.desc}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        {/* ── Voices ────────────────────────────────────────────────── */}
-        <section className="shell py-12">
-          <Stagger className="grid gap-4 md:grid-cols-3">
-            {VOICES.map((t) => (
-              <StaggerItem key={t.n}>
-                <figure className="card h-full p-5">
-                  <blockquote className="text-sm leading-relaxed text-pretty">“{t.q}”</blockquote>
-                  <figcaption className="mt-3 text-sm font-semibold">{t.n}</figcaption>
-                  <div className="text-xs text-foreground-muted">{t.r}</div>
-                </figure>
-              </StaggerItem>
-            ))}
-          </Stagger>
+        {/* Curated Feed Highlight */}
+        <section className="shell py-16 sm:py-20">
+          <div className="card overflow-hidden !p-0 border border-border shadow-e2">
+            <div className="h-1.5 w-full bg-gradient-to-r from-primary via-indigo-500 to-secondary" />
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <span className="eyebrow text-secondary">LIVE FROM DATABASE</span>
+                  <h3 className="font-display text-xl font-bold text-foreground">Featured Opportunities</h3>
+                </div>
+                <Link href="/explore" className="btn btn-primary btn-sm">
+                  View All Live Listings <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                {CURATED_PICKS.map((item) => (
+                  <div key={item.t} className="rounded-xl border border-border bg-surface-raised/40 p-4 hover:border-primary/30 transition-all">
+                    <span className="inline-block rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                      {item.tag}
+                    </span>
+                    <h4 className="mt-2 text-sm font-bold text-foreground line-clamp-1">{item.t}</h4>
+                    <p className="mt-1 text-xs text-foreground-muted">{item.m}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
       </main>
 

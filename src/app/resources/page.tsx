@@ -27,7 +27,7 @@ const resources = [
     href: "/help",
     icon: HelpCircle,
     label: "Help Center",
-    desc: "Find answers to common questions about NEXORA — account setup, bookmarks, tracker, wallet, and more.",
+    desc: "Find answers to common questions about Bloom — account setup, bookmarks, tracker, wallet, and more.",
     color: "bg-secondary/10 text-secondary border-secondary/20",
     iconBg: "bg-secondary/10 text-secondary",
   },
@@ -35,7 +35,7 @@ const resources = [
     href: "/privacy",
     icon: Shield,
     label: "Privacy Policy",
-    desc: "Understand how we collect, store, and protect your personal information on the NEXORA platform.",
+    desc: "Understand how we collect, store, and protect your personal information on the Bloom platform.",
     color: "bg-success-surface text-success border-success/20",
     iconBg: "bg-success-surface text-success",
   },
@@ -43,7 +43,7 @@ const resources = [
     href: "/terms",
     icon: FileText,
     label: "Terms of Use",
-    desc: "Read the terms and conditions that govern your access to and use of the NEXORA platform.",
+    desc: "Read the terms and conditions that govern your access to and use of the Bloom platform.",
     color: "bg-accent-gold-surface text-accent-gold border-accent-gold/20",
     iconBg: "bg-accent-gold-surface text-accent-gold",
   },
@@ -82,7 +82,7 @@ export default function ResourcesPage() {
               variants={itemVariants}
               className="mt-4 text-base text-foreground-muted max-w-xl mx-auto leading-relaxed"
             >
-              Guides, policies, and support resources to help you get the most out of NEXORA — your women&apos;s opportunity platform.
+              Guides, policies, and support resources to help you get the most out of Bloom — your women&apos;s opportunity platform.
             </motion.p>
           </motion.div>
         </section>

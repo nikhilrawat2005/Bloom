@@ -30,7 +30,7 @@ const sections = [
     title: "2. How We Use Your Information",
     content: `We use the information we collect to:
 
-• Provide, operate, and improve the NEXORA platform.
+• Provide, operate, and improve the Bloom platform.
 • Match and recommend relevant scholarships, fellowships, internships, and STEM programs to your profile.
 • Send deadline reminders and dashboard notifications you explicitly opt into.
 • Respond to your support requests and communicate updates.
@@ -51,13 +51,13 @@ While we take every reasonable precaution, no method of internet transmission is
   },
   {
     title: "4. Cookies & Analytics",
-    content: `NEXORA uses minimal browser storage (localStorage) only to persist your theme preference (light/dark mode). We do not use third-party advertising cookies or tracking pixels.
+    content: `Bloom uses minimal browser storage (localStorage) only to persist your theme preference (light/dark mode). We do not use third-party advertising cookies or tracking pixels.
 
 Anonymous usage analytics may be collected to understand aggregate platform usage and improve the user experience. This data cannot identify you personally.`,
   },
   {
     title: "5. Third-Party Services",
-    content: `NEXORA integrates with the following third-party services to provide core functionality:
+    content: `Bloom integrates with the following third-party services to provide core functionality:
 
 • **Google Firebase** — Authentication and database (Google Privacy Policy applies).
 • **Cloudinary** — Document/file storage (Cloudinary Privacy Policy applies).
@@ -78,7 +78,7 @@ To exercise any of these rights, contact us using the details below.`,
   },
   {
     title: "7. Children's Privacy",
-    content: `NEXORA is intended for users who are at least 13 years of age. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us with their information, please contact us immediately so we can delete it.`,
+    content: `Bloom is intended for users who are at least 13 years of age. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us with their information, please contact us immediately so we can delete it.`,
   },
   {
     title: "8. Changes to This Policy",
@@ -86,7 +86,7 @@ To exercise any of these rights, contact us using the details below.`,
   },
   {
     title: "9. Contact Us",
-    content: `If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please reach out to us through the NEXORA Help Center.`,
+    content: `If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please reach out to us through the Bloom Help Center.`,
   },
 ];
 
@@ -128,13 +128,13 @@ export default function PrivacyPolicyPage() {
               variants={itemVariants}
               className="mt-4 text-sm text-foreground-muted leading-relaxed"
             >
-              Last updated: July 10, 2026 &nbsp;·&nbsp; NEXORA Platform
+              Last updated: July 10, 2026 &nbsp;·&nbsp; Bloom Platform
             </motion.p>
             <motion.p
               variants={itemVariants}
               className="mt-3 text-base text-foreground-muted max-w-2xl leading-relaxed"
             >
-              At NEXORA, we are committed to protecting your privacy and handling your personal information with transparency and care. This policy explains what data we collect, how we use it, and how we keep it safe.
+              At Bloom, we are committed to protecting your privacy and handling your personal information with transparency and care. This policy explains what data we collect, how we use it, and how we keep it safe.
             </motion.p>
           </motion.div>
         </section>

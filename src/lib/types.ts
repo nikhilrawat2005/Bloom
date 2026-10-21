@@ -1,4 +1,4 @@
-// Central type definitions for Phase 3 — NEXORA Opportunity Ecosystem
+// Central type definitions for Phase 3 — Bloom Opportunity Ecosystem
 // All modules import from here. Do not define model interfaces elsewhere.
 
 // ─── WALLET ────────────────────────────────────────────────────────────────

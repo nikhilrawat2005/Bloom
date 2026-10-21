@@ -310,8 +310,8 @@ export async function syncOpportunitiesToFirestore(
 
     const payload = {
       title: opp.title || "Untitled Opportunity",
-      orgName: opp.orgName || opp.organization || "NEXORA Partner",
-      organization: opp.organization || opp.orgName || "NEXORA Partner",
+      orgName: opp.orgName || opp.organization || "Bloom Partner",
+      organization: opp.organization || opp.orgName || "Bloom Partner",
       description: opp.description || "",
       eligibility: opp.eligibility || "Open to all students — check official guidelines.",
       deadline: opp.deadline || "Rolling — check official site",
@@ -323,7 +323,7 @@ export async function syncOpportunitiesToFirestore(
       sourceUrl: opp.sourceUrl || opp.applyLink || "",
       source: "automated",
       sourceType: opp.sourceType || "trusted-feed",
-      scraperName: opp.scraperName || "NEXORA Ingestion",
+      scraperName: opp.scraperName || "Bloom Ingestion",
       status: initialStatus,
       postedByUid: "automated-ingestion",
       updatedAt: new Date().toISOString(),

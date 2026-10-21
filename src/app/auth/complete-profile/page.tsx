@@ -129,7 +129,7 @@ export default function CompleteProfile() {
           <span className="p-1.5 bg-gradient-to-tr from-primary to-secondary text-white rounded-xl shadow-md">
             <Sparkles className="w-5 h-5" />
           </span>
-          <span className="font-extrabold tracking-wider">NEXORA</span>
+          <span className="font-extrabold tracking-wider">Bloom</span>
         </Link>
         <h2 className="text-center text-3xl font-extrabold text-foreground">Complete your profile</h2>
         <p className="mt-2 text-center text-sm text-foreground-muted">

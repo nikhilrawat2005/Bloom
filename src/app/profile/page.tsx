@@ -342,7 +342,7 @@ export default function Profile() {
             </span>
             <h1 className="text-3xl font-extrabold text-foreground mt-2">Personalize Your Space</h1>
             <p className="text-sm text-foreground-muted mt-1">
-              Provide your background details so NEXORA can match you with relevant scholarships and reminders.
+              Provide your background details so Bloom can match you with relevant scholarships and reminders.
             </p>
           </motion.div>
 

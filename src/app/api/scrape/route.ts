@@ -27,7 +27,7 @@ const AUTO_SUMMARIZE_LIMIT = 50;
 // Stop starting new phases when fewer than this many seconds remain.
 const TIME_GUARD_MS = 40_000;
 
-const META_COLLECTION = "nexora_meta";
+const META_COLLECTION = "Bloom_meta";
 const SCRAPE_STATE_DOC = "scrape_state";
 
 async function readLastScrapedAt(): Promise<string | null> {

@@ -1,5 +1,5 @@
 /**
- * NEXORA Premium Design System — Anti-Generic
+ * Bloom Premium Design System — Anti-Generic
  * VIBE: Editorial Luxe × Technical Precision (Awwwards-level)
  * 
  * Decision log: why this isn't generic:

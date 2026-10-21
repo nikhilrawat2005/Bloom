@@ -2,7 +2,7 @@
 import * as cheerio from "cheerio";
 
 const BOT_UA =
-  "NexoraOpportunityBot/1.0 (+https://nexora.vercel.app; contact: support@nexora.app)";
+  "BloomOpportunityBot/1.0 (+https://Bloom.vercel.app; contact: support@Bloom.app)";
 const FETCH_TIMEOUT_MS = 12000;
 
 /** Decode bytes using charset from content-type; fallback latin1 if UTF-8 looks broken */

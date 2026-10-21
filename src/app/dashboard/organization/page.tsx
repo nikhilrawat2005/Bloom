@@ -235,7 +235,7 @@ export default function OrgDashboardPage() {
         country: "Global",
         category,
         field: field.trim() || "STEM",
-        applyLink: applyLink.trim() || "https://nexora.app/apply",
+        applyLink: applyLink.trim() || "https://Bloom.app/apply",
         requiredDocuments: ["Resume", "Certificate"],
         status: "pending" as OrgOpportunityStatus,
         applicationCount: 0,
@@ -334,7 +334,7 @@ export default function OrgDashboardPage() {
             </span>
             <h1 className="font-display text-xl text-foreground">Become an organization partner</h1>
             <p className="mt-2 text-sm leading-relaxed text-foreground-muted">
-              Post scholarships, fellowships, internships, or programs directly to NEXORA. An admin
+              Post scholarships, fellowships, internships, or programs directly to Bloom. An admin
               will review your request before you get posting access.
             </p>
           </div>

@@ -2059,7 +2059,7 @@ function ResumeTab() {
 }
 
 /* ==========================================================================
-   TAB 4: CAREER ROADMAP (INSPIRED BY ROADMAP.SH + NEXORA AI ENGINE)
+   TAB 4: CAREER ROADMAP (INSPIRED BY ROADMAP.SH + Bloom AI ENGINE)
    ========================================================================== */
 function RoadmapTab() {
   const { currentUser, profile } = useAuth();
@@ -2631,7 +2631,7 @@ function AdvisorInterviewHubTab() {
             {
               role: "model",
               mode: "interview",
-              text: `### 🎯 Welcome to your AI Technical & Behavioral Interview Coach!\n\nI am connected to your **NEXORA Profile & Document Wallet** (your verified resume, projects, and certifications).\n\n**How this works:**\n1. Paste your target Job Description / Role details above (e.g. *SDE-1 at Amazon, Data Analyst, Research Fellow*).\n2. Click **Start Mock Interview**.\n3. I will ask you **one tailored question at a time**.\n4. When you answer, I will evaluate it with a qualitative **Judgement** (strengths, missing elements, and ideal sample answer), then ask the next question.\n\nReady? Enter your target role and hit start!`,
+              text: `### 🎯 Welcome to your AI Technical & Behavioral Interview Coach!\n\nI am connected to your **Bloom Profile & Document Wallet** (your verified resume, projects, and certifications).\n\n**How this works:**\n1. Paste your target Job Description / Role details above (e.g. *SDE-1 at Amazon, Data Analyst, Research Fellow*).\n2. Click **Start Mock Interview**.\n3. I will ask you **one tailored question at a time**.\n4. When you answer, I will evaluate it with a qualitative **Judgement** (strengths, missing elements, and ideal sample answer), then ask the next question.\n\nReady? Enter your target role and hit start!`,
             },
           ]);
         }
@@ -2645,7 +2645,7 @@ function AdvisorInterviewHubTab() {
             {
               role: "model",
               mode: "advisor",
-              text: "Hello! I am your **AI Career Assistant** at NEXORA. How can I help you find target opportunities, optimize your resume, plan learning roadmaps, or prepare for applications today? You can also **drag & drop or paste multiple files** (PDF, DOCX, TXT, or images) and I will analyze them for you.",
+              text: "Hello! I am your **AI Career Assistant** at Bloom. How can I help you find target opportunities, optimize your resume, plan learning roadmaps, or prepare for applications today? You can also **drag & drop or paste multiple files** (PDF, DOCX, TXT, or images) and I will analyze them for you.",
             },
           ]);
         }
@@ -3111,7 +3111,7 @@ function AdvisorInterviewHubTab() {
                 <span>
                   {chatMode === "interview"
                     ? "AI Interview Coach is evaluating your answer and formulating the next question…"
-                    : "NEXORA Advisor is analyzing your query and formulating advice…"}
+                    : "Bloom Advisor is analyzing your query and formulating advice…"}
                 </span>
               </div>
             </div>

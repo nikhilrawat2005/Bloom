@@ -251,7 +251,7 @@ export default function CalendarPage() {
     const icsContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//NEXORA//Student Career Hub Calendar//EN",
+      "PRODID:-//Bloom//Student Career Hub Calendar//EN",
       "CALSCALE:GREGORIAN",
     ];
 
@@ -264,11 +264,11 @@ export default function CalendarPage() {
 
       icsContent.push(
         "BEGIN:VEVENT",
-        `UID:${ev.id.replace(/[^a-zA-Z0-9_-]/g, "")}@nexora.platform`,
+        `UID:${ev.id.replace(/[^a-zA-Z0-9_-]/g, "")}@Bloom.platform`,
         `DTSTAMP:${nowStamp}`,
         `DTSTART;VALUE=DATE:${validDate}`,
-        `SUMMARY:[NEXORA] ${(ev.title || "Event").replace(/[\r\n]+/g, " ")}`,
-        `DESCRIPTION:${(ev.description || "NEXORA Calendar Event").replace(/[\r\n]+/g, " ")}`,
+        `SUMMARY:[Bloom] ${(ev.title || "Event").replace(/[\r\n]+/g, " ")}`,
+        `DESCRIPTION:${(ev.description || "Bloom Calendar Event").replace(/[\r\n]+/g, " ")}`,
         "STATUS:CONFIRMED",
         "END:VEVENT"
       );
@@ -279,7 +279,7 @@ export default function CalendarPage() {
     const blob = new Blob([icsContent.join("\r\n")], { type: "text/calendar;charset=utf-8" });
     const link = document.createElement("a");
     link.href = window.URL.createObjectURL(blob);
-    link.setAttribute("download", `nexora_schedule_${MONTHS[currentMonth]}_${currentYear}.ics`);
+    link.setAttribute("download", `Bloom_schedule_${MONTHS[currentMonth]}_${currentYear}.ics`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

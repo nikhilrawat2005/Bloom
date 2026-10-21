@@ -67,7 +67,7 @@ export default function Login() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <Link href="/" className="flex items-center justify-center gap-2 text-2xl font-bold text-foreground mb-6">
           <span className="p-1.5 bg-gradient-to-tr from-primary to-secondary text-white rounded-xl shadow-md shadow-primary/20"><Sparkles className="w-5 h-5" /></span>
-          <span className="font-extrabold tracking-wider bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">NEXORA</span>
+          <span className="font-extrabold tracking-wider bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">Bloom</span>
         </Link>
         <h2 className="text-center text-3xl font-extrabold text-foreground">Welcome back</h2>
         <p className="mt-2 text-center text-sm text-foreground-muted">Sign in with your <span className="font-semibold">email or username</span> + password, or Google.</p>
@@ -120,7 +120,7 @@ export default function Login() {
             </button>
           </div>
 
-          <div className="mt-6 text-center text-sm text-foreground-muted">New to NEXORA? <Link href="/auth/signup" className="font-bold text-primary hover:text-primary-hover transition-colors">Create an account</Link></div>
+          <div className="mt-6 text-center text-sm text-foreground-muted">New to Bloom? <Link href="/auth/signup" className="font-bold text-primary hover:text-primary-hover transition-colors">Create an account</Link></div>
         </div>
       </div>
     </div>

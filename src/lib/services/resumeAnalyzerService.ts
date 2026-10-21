@@ -1,6 +1,6 @@
 ﻿// ---------------------------------------------------------------------------
-// Nexora Resume Intelligence — Elite ATS Resume Analyzer Service
-// Based on Bob's implementation, adapted for Nexora (Next.js/TypeScript)
+// Bloom Resume Intelligence — Elite ATS Resume Analyzer Service
+// Based on Bob's implementation, adapted for Bloom (Next.js/TypeScript)
 // ---------------------------------------------------------------------------
 import { AIRouterService } from '../aiProviders';
 import { neutralize } from '../promptGuard';

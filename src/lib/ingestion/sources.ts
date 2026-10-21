@@ -42,7 +42,7 @@ const MAX_FEED_BYTES = 3 * 1024 * 1024;
 async function fetchText(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: {
-      "User-Agent": "NexoraOpportunityBot/1.0 (+https://nexora.vercel.app)",
+      "User-Agent": "BloomOpportunityBot/1.0 (+https://Bloom.vercel.app)",
     },
     // Without a timeout one hung upstream stalls Promise.allSettled for the
     // whole run (allSettled waits on the hung promise) until the function dies.
@@ -100,7 +100,7 @@ async function fetchRssFeed(feedUrl: string): Promise<RawListing[]> {
 async function fetchDevpostHackathons(): Promise<RawListing[]> {
   const res = await fetch(
     "https://devpost.com/api/hackathons?status[]=open&order_by=recently-added",
-    { headers: { "User-Agent": "NexoraOpportunityBot/1.0" } }
+    { headers: { "User-Agent": "BloomOpportunityBot/1.0" } }
   );
   if (!res.ok) throw new Error(`Devpost API failed: ${res.status}`);
   const data = await res.json();

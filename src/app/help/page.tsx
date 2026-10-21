@@ -19,12 +19,12 @@ const itemVariants: Variants = {
 
 const faqs = [
   {
-    q: "How do I create a NEXORA account?",
-    a: "Click 'Get Started' or 'Sign Up' on the homepage. You can register using your email address. Once registered, complete your profile so NEXORA can match you with relevant opportunities.",
+    q: "How do I create a Bloom account?",
+    a: "Click 'Get Started' or 'Sign Up' on the homepage. You can register using your email address. Once registered, complete your profile so Bloom can match you with relevant opportunities.",
   },
   {
-    q: "How does NEXORA match opportunities to my profile?",
-    a: "NEXORA uses the details you provide in your profile — education level, field of interest, location, income bracket, and skills — to surface the most relevant scholarships, fellowships, internships, and programs from our live database.",
+    q: "How does Bloom match opportunities to my profile?",
+    a: "Bloom uses the details you provide in your profile — education level, field of interest, location, income bracket, and skills — to surface the most relevant scholarships, fellowships, internships, and programs from our live database.",
   },
   {
     q: "How do I bookmark an opportunity?",
@@ -43,16 +43,16 @@ const faqs = [
     a: "On any opportunity detail page, click 'Set Reminder' in the Deadline Alert panel on the right sidebar. You must be logged in. The reminder will appear on your dashboard so you never miss an application window.",
   },
   {
-    q: "Can organizations post opportunities on NEXORA?",
+    q: "Can organizations post opportunities on Bloom?",
     a: "Yes! Organizations can register and submit opportunities through the Organization Portal. Submitted opportunities go through an approval process before being visible to users.",
   },
   {
-    q: "Is my data safe on NEXORA?",
-    a: "Absolutely. NEXORA uses Firebase Authentication and Firestore with strict security rules. Documents uploaded to the Wallet are stored in a private Cloudinary folder isolated per user. We never sell your data. See our Privacy Policy for full details.",
+    q: "Is my data safe on Bloom?",
+    a: "Absolutely. Bloom uses Firebase Authentication and Firestore with strict security rules. Documents uploaded to the Wallet are stored in a private Cloudinary folder isolated per user. We never sell your data. See our Privacy Policy for full details.",
   },
   {
-    q: "How do I contact NEXORA support?",
-    a: "Our support team is available through the NEXORA Help Center and we aim to respond within 24 hours.",
+    q: "How do I contact Bloom support?",
+    a: "Our support team is available through the Bloom Help Center and we aim to respond within 24 hours.",
   },
 ];
 
@@ -128,7 +128,7 @@ export default function HelpCenterPage() {
               variants={itemVariants}
               className="mt-4 text-base text-foreground-muted max-w-xl mx-auto leading-relaxed"
             >
-              Browse answers to the most frequently asked questions about using the NEXORA platform.
+              Browse answers to the most frequently asked questions about using the Bloom platform.
             </motion.p>
           </motion.div>
         </section>

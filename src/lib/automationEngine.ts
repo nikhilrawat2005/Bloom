@@ -166,7 +166,7 @@ export async function seedWelcomeNotification(uid: string, name: string): Promis
   try {
     await createNotification(
       uid,
-      "Welcome to NEXORA! 🌸",
+      "Welcome to Bloom! 🌸",
       `Hi ${name}! Complete your profile so we can match you with the best opportunities. Head to the AI Hub to explore career tools.`,
       "ai_suggestion",
       "/profile",

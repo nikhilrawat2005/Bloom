@@ -65,7 +65,7 @@ function buildPrompt(o: any): string {
   const url = q(o.applyLink || o.sourceUrl, 2000);
   const description = neutralize((o.description || "").slice(0, 2500), 2500);
 
-  return `You are NEXORA's opportunity explainer. Summarize the opportunity described below into a proper easy-to-understand format so any student can understand what is happening.
+  return `You are Bloom's opportunity explainer. Summarize the opportunity described below into a proper easy-to-understand format so any student can understand what is happening.
 
 RULES:
 - Use simple, friendly language (no jargon)

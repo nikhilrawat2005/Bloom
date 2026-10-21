@@ -107,7 +107,7 @@ interface GhResult {
 function ghHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
-    'User-Agent': 'NEXORA-Profile-Enrichment',
+    'User-Agent': 'Bloom-Profile-Enrichment',
     'X-GitHub-Api-Version': '2022-11-28',
   };
   const token = process.env.GITHUB_TOKEN;
@@ -454,7 +454,7 @@ async function fetchLeetCode(handle: string, url: string, deadline: number): Pro
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; NEXORA/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; Bloom/1.0)',
         Referer: 'https://leetcode.com/',
       },
       body: JSON.stringify({ query, variables: { u: handle } }),

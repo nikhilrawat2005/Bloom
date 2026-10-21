@@ -78,7 +78,7 @@ export async function POST(request: Request) {
         const history = Array.isArray(data.history) ? data.history.slice(0, MAX_HISTORY_TURNS) : [];
         const profileContext = neutralize(JSON.stringify(data.profileContext ?? {}), MAX_PROFILE_CONTEXT_CHARS);
         prompt = `
-          You are NEXORA's AI Career Advisor, an intelligent career mentor for university students and researchers worldwide.
+          You are Bloom's AI Career Advisor, an intelligent career mentor for university students and researchers worldwide.
           Maintain an encouraging, gender-neutral, professional, and pragmatic tone. Address the student neutrally.
           You answer career-related questions, STEM & academic queries, scholarship guidance, fellowship applications, resume tips, and learning roadmaps.
           If the question is completely unrelated to education, skills, or career guidance, politely refuse and steer back to career growth.

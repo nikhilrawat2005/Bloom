@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
-import { Fraunces, Sora, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import PageTransition from "@/components/PageTransition";
 
-/* next/font owns the actual family names; these variables are what
-   globals.css maps its --font-display / --font-mono tokens onto. Keeping the
-   two sets separate avoids the self-referential token that used to leave
-   `font-display` silently falling back to Georgia. */
-const fraunces = Fraunces({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-fraunces",
+  variable: "--font-display-custom",
   display: "swap",
+  weight: ["500", "600", "700"],
 });
 
-const sora = Sora({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-workhorse",
   display: "swap",
@@ -30,9 +27,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NEXORA — Editorial Intelligence for Ambitious Students",
+  title: "Bloom — Future-Proof Opportunities & AI Career Intelligence",
   description:
-    "A curated, AI-augmented atlas of scholarships, fellowships, internships and hackathons. Parchment calm, ink precision.",
+    "Next-generation opportunity intelligence for ambitious students and builders. Curated scholarships, fellowships, internships, hackathons, and AI career tools.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -40,11 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${sora.variable} ${mono.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${plusJakarta.variable} ${mono.variable} h-full antialiased`}
     >
-      {/* bg-background/text-background live in globals.css so the theme toggle
-          animates a single property rather than swapping a Tailwind class. */}
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col font-sans">
         <ThemeProvider>
           <AuthProvider>
             <PageTransition>{children}</PageTransition>

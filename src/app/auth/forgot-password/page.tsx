@@ -40,7 +40,7 @@ export default function ForgotPassword() {
           <span className="p-1.5 bg-gradient-to-tr from-primary to-secondary text-white rounded-xl shadow-md shadow-primary/20">
             <Sparkles className="w-5 h-5" />
           </span>
-          <span className="font-extrabold tracking-wider bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">NEXORA</span>
+          <span className="font-extrabold tracking-wider bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">Bloom</span>
         </Link>
         <h2 className="text-center text-3xl font-extrabold text-foreground">Reset Password</h2>
         <p className="mt-2 text-center text-sm text-slate-500">

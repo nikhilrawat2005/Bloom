@@ -128,7 +128,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="grid h-7 w-7 place-items-center rounded-sm bg-surface-ink text-background">
               <Sparkles className="h-3.5 w-3.5" />
             </span>
-            <span className="font-display text-base text-foreground">NEXORA</span>
+            <span className="font-display text-base text-foreground">Bloom</span>
           </Link>
           <button
             type="button"
@@ -152,7 +152,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <div className="flex items-center justify-between border-b border-border pb-4">
                 <span className="flex items-center gap-2 font-display text-base text-foreground">
-                  <Sparkles className="h-4 w-4 text-secondary" /> NEXORA
+                  <Sparkles className="h-4 w-4 text-secondary" /> Bloom
                 </span>
                 <button
                   type="button"
@@ -209,7 +209,7 @@ function SidebarHeader() {
         <Sparkles className="h-4.5 w-4.5" />
       </span>
       <div>
-        <h4 className="font-display text-lg leading-none text-foreground">NEXORA</h4>
+        <h4 className="font-display text-lg leading-none text-foreground">Bloom</h4>
         <span className="eyebrow mt-1">Student Intelligence Hub</span>
       </div>
     </div>

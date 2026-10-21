@@ -183,7 +183,7 @@ export async function POST(request: Request) {
     try {
       const res = await fetch(safeUrl, {
         headers: {
-          "User-Agent": "NexoraOpportunityBot/1.0 (+https://nexora.vercel.app)",
+          "User-Agent": "BloomOpportunityBot/1.0 (+https://Bloom.vercel.app)",
           Accept: "text/html,application/xhtml+xml",
         },
         signal: AbortSignal.timeout(15000),
@@ -201,7 +201,7 @@ export async function POST(request: Request) {
         }
         const followRes = await fetch(followed.url, {
           headers: {
-            "User-Agent": "NexoraOpportunityBot/1.0 (+https://nexora.vercel.app)",
+            "User-Agent": "BloomOpportunityBot/1.0 (+https://Bloom.vercel.app)",
             Accept: "text/html,application/xhtml+xml",
           },
           signal: AbortSignal.timeout(15000),
@@ -228,7 +228,7 @@ export async function POST(request: Request) {
     // 3. Try AI
     try {
       if (raw.length >= 60) {
-        const prompt = `You are NEXORA's opportunity explainer. Summarize the opportunity page below into a proper easy-to-understand format so any student can understand what is happening.
+        const prompt = `You are Bloom's opportunity explainer. Summarize the opportunity page below into a proper easy-to-understand format so any student can understand what is happening.
 
 RULES:
 - Use simple, friendly language (no jargon)

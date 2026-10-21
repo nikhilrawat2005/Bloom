@@ -181,12 +181,12 @@ export default function Dashboard() {
             <h1 className="mt-3 text-display-sm text-foreground">
               Hello,{" "}
               <span className="font-display italic text-secondary">
-                {profile?.name || currentUser?.displayName || "NEXORA Scholar"}
+                {profile?.name || currentUser?.displayName || "Bloom Scholar"}
               </span>
             </h1>
             <p className="mt-2 text-sm text-foreground-muted">
               {profile?.education ? `${profile.education} · ` : ""}
-              {profile?.location || "NEXORA Platform"}
+              {profile?.location || "Bloom Platform"}
             </p>
           </div>
 
